@@ -569,10 +569,10 @@
       elements.forEach((el, elIndex) => {
         const letters = wrapLetters(el);
         letters.forEach((letter, i) => {
-          allLetters.push({ el: letter, delay: currentDelay + i * 25 });
+          allLetters.push({ el: letter, delay: currentDelay + i * 20 });
         });
         // Przerwa między elementami
-        currentDelay += letters.length * 25 + 150;
+        currentDelay += letters.length * 20 + 100;
       });
 
       if (!window.anime || allLetters.length === 0) return;
@@ -580,17 +580,31 @@
       // Ustaw stan początkowy
       allLetters.forEach(({ el }) => {
         el.style.opacity = '0';
-        el.style.transform = 'translateZ(-80px) translateY(30px) rotateX(-90deg)';
+        el.style.transform = 'perspective(500px) translateY(40px) rotateX(-90deg) scale(0.8)';
       });
 
       currentAnimation = anime({
         targets: allLetters.map(l => l.el),
-        opacity: [0, 1],
-        translateZ: [-80, 0],
-        translateY: [30, 0],
-        rotateX: [-90, 0],
-        easing: 'easeOutExpo',
-        duration: 600,
+        opacity: {
+          value: [0, 1],
+          duration: 300,
+          easing: 'easeOutQuad'
+        },
+        translateY: {
+          value: [40, 0],
+          duration: 500,
+          easing: 'easeOutExpo'
+        },
+        rotateX: {
+          value: [-90, 0],
+          duration: 600,
+          easing: 'easeOutBack'
+        },
+        scale: {
+          value: [0.8, 1],
+          duration: 400,
+          easing: 'easeOutQuad'
+        },
         delay: (el, i) => allLetters[i].delay,
         complete: () => {
           currentAnimation = null;
