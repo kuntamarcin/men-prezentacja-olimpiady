@@ -626,6 +626,59 @@
 
       currentSlideIndex = 0;
       renderCurrentSlide();
+
+      // Uruchom polling co 10 sekund
+      startPolling();
+    }
+
+    // Polling - odświeżanie danych co 10 sekund
+    const POLLING_INTERVAL = 10000; // 10 sekund
+    let pollingTimer = null;
+
+    function startPolling() {
+      if (pollingTimer) return; // już działa
+      pollingTimer = setInterval(refreshData, POLLING_INTERVAL);
+    }
+
+    async function refreshData() {
+      try {
+        const table = await fetchSheetData();
+        const newContests = parseContestsFromTable(table);
+        const newSlides = buildSlidesFromContests(newContests);
+
+        if (newSlides.length > 0) {
+          // Zapamiętaj aktualny konkurs i typ slajdu
+          const currentSlide = slides[currentSlideIndex];
+          const currentContestTitle = currentSlide ? currentSlide.contest.title : null;
+          const currentSlideType = currentSlide ? currentSlide.type : null;
+
+          // Zaktualizuj dane
+          contests = newContests;
+          slides = newSlides;
+
+          // Spróbuj znaleźć ten sam slajd po aktualizacji
+          if (currentContestTitle) {
+            const newIndex = slides.findIndex(
+              s => s.contest.title === currentContestTitle && s.type === currentSlideType
+            );
+            if (newIndex !== -1) {
+              currentSlideIndex = newIndex;
+            } else if (currentSlideIndex >= slides.length) {
+              currentSlideIndex = Math.max(0, slides.length - 1);
+            }
+          }
+
+          // Odśwież widok tylko jeśli prezentacja jest aktywna
+          if (presentationStarted) {
+            renderCurrentSlide();
+          }
+
+          console.log("Dane odświeżone z Google Sheets");
+        }
+      } catch (err) {
+        // Cicha porażka - zachowaj poprzednie dane
+        console.warn("Nie udało się odświeżyć danych, używam poprzednich:", err.message);
+      }
     }
 
     function requestFullscreenForPresentation() {
