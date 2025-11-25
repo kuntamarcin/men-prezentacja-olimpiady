@@ -234,6 +234,33 @@
       box-shadow: 0 3px 10px rgba(0,0,0,0.5);
     }
 
+    #download-offline-button {
+      pointer-events: auto;
+      cursor: pointer;
+      display: inline-block;
+      margin-top: 1rem;
+      border: none;
+      text-decoration: none;
+      font-family: "UniSansHeavyCAPS", sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 0.7rem 1.8rem;
+      border-radius: 999px;
+      background: #ffffff;
+      color: #000000;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    #download-offline-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+    }
+
+    #download-offline-button:active {
+      transform: translateY(1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+    }
+
     /* Fade sequence – początkowo ukryte, animowane JS-em */
     .fade-seq {
       opacity: 0;
@@ -264,10 +291,9 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" defer></script>
 
   <script>
-    // Dane z Google Sheets (online) + fallback na lokalny plik CSV (laureaci.csv)
+    // Dane tylko z Google Sheets (online)
     const SHEET_ID = "1_4ZEm_I27_I0c6Gnlr2Ffs3lUg8alIcEwrHCzwXwysk";
     const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-    const CSV_PATH = "laureaci.csv";
 
     let contests = [];
     let slides = [];
@@ -301,39 +327,6 @@
       const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
       const data = JSON.parse(jsonStr);
       return data.table;
-    }
-
-    async function fetchCsvText() {
-      const res = await fetch(CSV_PATH);
-      if (!res.ok) {
-        throw new Error("Nie udało się wczytać pliku laureaci.csv");
-      }
-      return await res.text();
-    }
-
-    // Prosty parser CSV (obsługuje separator "," lub ";")
-    function parseCsv(text) {
-      const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
-      if (lines.length === 0) return [];
-
-      const headerLine = lines[0];
-      const delimiter = (headerLine.match(/;/g) || []).length > (headerLine.match(/,/g) || []).length ? ";" : ",";
-
-      const headers = headerLine.split(delimiter).map(h => h.trim());
-
-      const rows = [];
-      for (let i = 1; i < lines.length; i++) {
-        const raw = lines[i].trim();
-        if (!raw) continue;
-        const parts = raw.split(delimiter).map(p => p.trim());
-        const row = {};
-        headers.forEach((h, idx) => {
-          row[h] = parts[idx] !== undefined ? parts[idx] : "";
-        });
-        rows.push(row);
-      }
-
-      return rows;
     }
 
     function parseContestsFromTable(table) {
@@ -382,50 +375,6 @@
         const winnerNameVal = c[idxWinnerName] && c[idxWinnerName].v != null ? String(c[idxWinnerName].v).trim() : "";
         const schoolVal = c[idxSchool] && c[idxSchool].v != null ? String(c[idxSchool].v).trim() : "";
         const regionVal = c[idxRegion] && c[idxRegion].v != null ? String(c[idxRegion].v).trim() : "";
-
-        const allEmpty = !nameVal && !orgVal && !winnerNameVal && !schoolVal && !regionVal;
-        if (allEmpty) continue;
-
-        // Jeśli wiersz ma nazwę konkursu -> nowy konkurs
-        if (nameVal) {
-          if (currentContest) {
-            result.push(currentContest);
-          }
-          currentContest = {
-            title: nameVal,
-            organizer: orgVal,
-            winners: []
-          };
-        }
-
-        if (!currentContest) continue;
-
-        if (winnerNameVal) {
-          currentContest.winners.push({
-            name: winnerNameVal,
-            school: schoolVal,
-            region: regionVal
-          });
-        }
-      }
-
-      if (currentContest) {
-        result.push(currentContest);
-      }
-
-      return result;
-    }
-
-    function parseContestsFromRows(rows) {
-      const result = [];
-      let currentContest = null;
-
-      for (const r of rows) {
-        const nameVal = (r["nazwa_konkursu"] || "").trim();
-        const orgVal = (r["organizator"] || "").trim();
-        const winnerNameVal = (r["imiona_nazwiska_laureata"] || "").trim();
-        const schoolVal = (r["nazwa_szkoly"] || "").trim();
-        const regionVal = (r["wojewodztwo"] || "").trim();
 
         const allEmpty = !nameVal && !orgVal && !winnerNameVal && !schoolVal && !regionVal;
         if (allEmpty) continue;
@@ -771,17 +720,9 @@
       try {
         // Równolegle: ładuj dane i wideo
         const dataPromise = (async () => {
-          try {
-            const table = await fetchSheetData();
-            contests = parseContestsFromTable(table);
-            slides = buildSlidesFromContests(contests);
-          } catch (errSheets) {
-            console.error("Błąd Google Sheets, próba wczytania CSV", errSheets);
-            const csvText = await fetchCsvText();
-            const rows = parseCsv(csvText);
-            contests = parseContestsFromRows(rows);
-            slides = buildSlidesFromContests(contests);
-          }
+          const table = await fetchSheetData();
+          contests = parseContestsFromTable(table);
+          slides = buildSlidesFromContests(contests);
         })();
 
         const videoPromise = Promise.all([videoReady(video1), videoReady(video2)]);
@@ -848,6 +789,9 @@
         Następnie używaj klawiszy strzałek (jak w PowerPoincie), aby przechodzić między slajdami.
       </p>
       <button id="start-button">Start prezentacji</button>
+      <a id="download-offline-button" href="prezentacja-offline.zip" download>
+        Ściągnij prezentację (offline, snapshot z Google Sheets)
+      </a>
     </div>
 
     <!-- Komunikat błędu -->
