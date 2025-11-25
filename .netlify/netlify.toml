@@ -1,0 +1,30 @@
+plugins = []
+functionsDirectory = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja/netlify/functions"
+functionsDirectoryOrigin = "config-v1"
+headers = []
+redirects = []
+
+[functions]
+
+[functions."*"]
+
+[build]
+publish = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja/biz.kreatywny/men-prezentacja"
+publishOrigin = "config"
+commandOrigin = "config"
+command = "# no build command"
+functions = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja/netlify/functions"
+
+[build.environment]
+
+[build.processing]
+
+[build.processing.css]
+
+[build.processing.html]
+
+[build.processing.images]
+
+[build.processing.js]
+
+[build.services]
