@@ -703,14 +703,18 @@
             currentSlideIndex = newIndex;
           } else {
             // Konkurs został usunięty - ustaw bezpieczny indeks
-            currentSlideIndex = Math.min(currentSlideIndex, Math.max(0, slides.length - 1));
+            const safeIndex = Math.min(currentSlideIndex, Math.max(0, slides.length - 1));
+            if (safeIndex !== currentSlideIndex) {
+              currentSlideIndex = safeIndex;
+              // Przerenderuj tylko jeśli indeks się zmienił (konkurs usunięty)
+              if (presentationStarted && slides.length > 0) {
+                renderCurrentSlide();
+              }
+            }
           }
 
-          // Odśwież widok tylko jeśli prezentacja jest aktywna
-          if (presentationStarted && slides.length > 0) {
-            renderCurrentSlide();
-          }
-
+          // NIE renderujemy slajdu przy każdym pollingu - tylko aktualizujemy dane
+          // Slajd zostanie odświeżony przy następnej nawigacji
           console.log("Dane odświeżone z Google Sheets");
         }
       } catch (err) {
