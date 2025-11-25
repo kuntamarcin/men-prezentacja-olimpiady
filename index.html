@@ -144,32 +144,6 @@
       margin-top: 0.8vh;
     }
 
-    /* Wskaźnik źródła danych */
-    #data-source-indicator {
-      position: fixed;
-      bottom: 1rem;
-      right: 1rem;
-      z-index: 10;
-      font-size: 0.75rem;
-      padding: 0.4rem 0.8rem;
-      border-radius: 4px;
-      background: rgba(0, 0, 0, 0.6);
-      color: #fff;
-      pointer-events: none;
-    }
-
-    #data-source-indicator.source-sheets {
-      background: rgba(15, 157, 88, 0.85);
-    }
-
-    #data-source-indicator.source-csv {
-      background: rgba(251, 188, 4, 0.85);
-      color: #000;
-    }
-
-    #data-source-indicator.source-error {
-      background: rgba(234, 67, 53, 0.85);
-    }
 
     /* Ekran startowy */
     #start-overlay {
@@ -262,8 +236,6 @@
     let slides = [];
     let currentSlideIndex = 0;
     let presentationStarted = false;
-    let dataSource = null; // 'sheets' | 'csv' | 'error'
-
     // Funkcja do usuwania sierotek (w, z, i, o, u, a itp.) - zamienia spację po nich na &nbsp;
     function fixOrphans(text) {
       // Lista polskich spójników/przyimków które nie powinny zostawać na końcu linii
@@ -275,22 +247,6 @@
         result = result.replace(regex, `$1$2\u00A0`);
       });
       return result;
-    }
-
-    function updateDataSourceIndicator() {
-      const el = document.getElementById('data-source-indicator');
-      if (!el) return;
-      el.classList.remove('source-sheets', 'source-csv', 'source-error');
-      if (dataSource === 'sheets') {
-        el.textContent = 'Źródło: Google Sheets (online)';
-        el.classList.add('source-sheets');
-      } else if (dataSource === 'csv') {
-        el.textContent = 'Źródło: lokalny plik CSV';
-        el.classList.add('source-csv');
-      } else {
-        el.textContent = 'Błąd wczytywania danych';
-        el.classList.add('source-error');
-      }
     }
 
     function showError(message) {
@@ -704,7 +660,6 @@
         const table = await fetchSheetData();
         contests = parseContestsFromTable(table);
         slides = buildSlidesFromContests(contests);
-        dataSource = 'sheets';
       } catch (errSheets) {
         console.error("Błąd Google Sheets, próba wczytania CSV", errSheets);
         try {
@@ -712,17 +667,12 @@
           const rows = parseCsv(csvText);
           contests = parseContestsFromRows(rows);
           slides = buildSlidesFromContests(contests);
-          dataSource = 'csv';
         } catch (errCsv) {
           console.error("Błąd CSV", errCsv);
-          dataSource = 'error';
-          updateDataSourceIndicator();
           showError("Błąd podczas wczytywania danych z Google Sheets i z pliku laureaci.csv.");
           return;
         }
       }
-
-      updateDataSourceIndicator();
 
       if (!slides.length) {
         showError("Nie znaleziono żadnych konkursów w danych.");
@@ -769,9 +719,6 @@
 
     <!-- Komunikat błędu -->
     <div id="error-message"></div>
-
-    <!-- Wskaźnik źródła danych -->
-    <div id="data-source-indicator"></div>
   </div>
 </body>
 </html>
