@@ -145,19 +145,54 @@
     }
 
 
-    /* Ekran startowy */
-    #start-overlay {
+    /* Ekran ładowania */
+    #loading-overlay {
       position: absolute;
       inset: 0;
-      z-index: 2;
-      background: rgba(0, 0, 0, 0.75);
+      z-index: 5;
+      background: #000;
       display: flex;
       align-items: center;
       justify-content: center;
       flex-direction: column;
       color: #fff;
       text-align: center;
+    }
+
+    #loading-overlay.hidden {
+      display: none;
+    }
+
+    .loader {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Ekran startowy */
+    #start-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background: rgba(0, 0, 0, 0.6);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      color: #fff;
+      text-align: center;
       padding: 2rem;
+    }
+
+    #start-overlay.visible {
+      display: flex;
     }
 
     #start-overlay h1 {
@@ -657,19 +692,22 @@
           slides = newSlides;
 
           // Spróbuj znaleźć ten sam slajd po aktualizacji
+          let newIndex = -1;
           if (currentContestTitle) {
-            const newIndex = slides.findIndex(
+            newIndex = slides.findIndex(
               s => s.contest.title === currentContestTitle && s.type === currentSlideType
             );
-            if (newIndex !== -1) {
-              currentSlideIndex = newIndex;
-            } else if (currentSlideIndex >= slides.length) {
-              currentSlideIndex = Math.max(0, slides.length - 1);
-            }
+          }
+          
+          if (newIndex !== -1) {
+            currentSlideIndex = newIndex;
+          } else {
+            // Konkurs został usunięty - ustaw bezpieczny indeks
+            currentSlideIndex = Math.min(currentSlideIndex, Math.max(0, slides.length - 1));
           }
 
           // Odśwież widok tylko jeśli prezentacja jest aktywna
-          if (presentationStarted) {
+          if (presentationStarted && slides.length > 0) {
             renderCurrentSlide();
           }
 
@@ -698,7 +736,12 @@
     document.addEventListener("DOMContentLoaded", async () => {
       setupKeyboardNavigation();
 
+      const loadingOverlay = document.getElementById("loading-overlay");
+      const startOverlay = document.getElementById("start-overlay");
       const startButton = document.getElementById("start-button");
+      const video1 = document.getElementById("video-title-bg");
+      const video2 = document.getElementById("video-winners-bg");
+
       startButton.addEventListener("click", async () => {
         try {
           await requestFullscreenForPresentation();
@@ -708,43 +751,75 @@
         startPresentation();
       });
 
-      try {
-        // Najpierw próbujemy Google Sheets
-        const table = await fetchSheetData();
-        contests = parseContestsFromTable(table);
-        slides = buildSlidesFromContests(contests);
-      } catch (errSheets) {
-        console.error("Błąd Google Sheets, próba wczytania CSV", errSheets);
-        try {
-          const csvText = await fetchCsvText();
-          const rows = parseCsv(csvText);
-          contests = parseContestsFromRows(rows);
-          slides = buildSlidesFromContests(contests);
-        } catch (errCsv) {
-          console.error("Błąd CSV", errCsv);
-          showError("Błąd podczas wczytywania danych z Google Sheets i z pliku laureaci.csv.");
-          return;
-        }
+      // Funkcja sprawdzająca czy wideo jest załadowane
+      function videoReady(video) {
+        return new Promise((resolve) => {
+          if (video.readyState >= 3) {
+            resolve();
+          } else {
+            video.addEventListener('canplaythrough', resolve, { once: true });
+            // Timeout na wypadek problemów
+            setTimeout(resolve, 5000);
+          }
+        });
       }
 
-      if (!slides.length) {
-        showError("Nie znaleziono żadnych konkursów w danych.");
+      try {
+        // Równolegle: ładuj dane i wideo
+        const dataPromise = (async () => {
+          try {
+            const table = await fetchSheetData();
+            contests = parseContestsFromTable(table);
+            slides = buildSlidesFromContests(contests);
+          } catch (errSheets) {
+            console.error("Błąd Google Sheets, próba wczytania CSV", errSheets);
+            const csvText = await fetchCsvText();
+            const rows = parseCsv(csvText);
+            contests = parseContestsFromRows(rows);
+            slides = buildSlidesFromContests(contests);
+          }
+        })();
+
+        const videoPromise = Promise.all([videoReady(video1), videoReady(video2)]);
+
+        await Promise.all([dataPromise, videoPromise]);
+
+        // Pokaż bg-1 na ekranie startowym
+        video1.classList.add("visible");
+        video2.classList.remove("visible");
+
+        // Schowaj loader, pokaż ekran startowy
+        loadingOverlay.classList.add("hidden");
+        startOverlay.classList.add("visible");
+
+        if (!slides.length) {
+          showError("Nie znaleziono żadnych konkursów w danych.");
+        }
+      } catch (err) {
+        console.error("Błąd ładowania", err);
+        loadingOverlay.classList.add("hidden");
+        showError("Błąd podczas wczytywania danych.");
       }
     });
   </script>
 </head>
 <body>
   <div id="app">
+    <!-- Ekran ładowania -->
+    <div id="loading-overlay">
+      <div class="loader"></div>
+    </div>
+
     <!-- Tło wideo -->
     <div id="video-layer">
       <video
         id="video-title-bg"
-        class="visible"
         src="bg-1.mp4"
         autoplay
         muted
         loop
         playsinline
+        preload="auto"
       ></video>
 
       <video
@@ -754,6 +829,7 @@
         muted
         loop
         playsinline
+        preload="auto"
       ></video>
     </div>
 
