@@ -97,11 +97,6 @@
       perspective: 1000px;
     }
 
-    /* Litery do animacji */
-    .letter {
-      display: inline-block;
-      transform-style: preserve-3d;
-    }
 
     .slide-title {
       font-weight: 700;
@@ -544,73 +539,8 @@
       return container;
     }
 
-    // Funkcja animacji – efekt 3D litera po literze
+    // Funkcja animacji – płynne wejście z efektem scale
     let currentAnimation = null;
-
-    // Zamień tekst na spany z pojedynczymi literami
-    function wrapLetters(element) {
-      const text = element.innerHTML;
-      // Zamień każdy znak (w tym &nbsp;) na span
-      let letterIndex = 0;
-      const wrapped = text.replace(/(&nbsp;|&#160;|\u00A0|[^\s])/g, (match) => {
-        if (match === '&nbsp;' || match === '&#160;' || match === '\u00A0') {
-          return `<span class="letter" style="opacity:0">&nbsp;</span>`;
-        }
-        return `<span class="letter" style="opacity:0">${match}</span>`;
-      });
-      element.innerHTML = wrapped;
-      return element.querySelectorAll('.letter');
-    }
-
-    function animateLetters3D(elements, baseDelay = 0) {
-      let allLetters = [];
-      let currentDelay = baseDelay;
-
-      elements.forEach((el, elIndex) => {
-        const letters = wrapLetters(el);
-        letters.forEach((letter, i) => {
-          allLetters.push({ el: letter, delay: currentDelay + i * 20 });
-        });
-        // Przerwa między elementami
-        currentDelay += letters.length * 20 + 100;
-      });
-
-      if (!window.anime || allLetters.length === 0) return;
-
-      // Ustaw stan początkowy
-      allLetters.forEach(({ el }) => {
-        el.style.opacity = '0';
-        el.style.transform = 'perspective(500px) translateY(40px) rotateX(-90deg) scale(0.8)';
-      });
-
-      currentAnimation = anime({
-        targets: allLetters.map(l => l.el),
-        opacity: {
-          value: [0, 1],
-          duration: 300,
-          easing: 'easeOutQuad'
-        },
-        translateY: {
-          value: [40, 0],
-          duration: 500,
-          easing: 'easeOutExpo'
-        },
-        rotateX: {
-          value: [-90, 0],
-          duration: 600,
-          easing: 'easeOutBack'
-        },
-        scale: {
-          value: [0.8, 1],
-          duration: 400,
-          easing: 'easeOutQuad'
-        },
-        delay: (el, i) => allLetters[i].delay,
-        complete: () => {
-          currentAnimation = null;
-        }
-      });
-    }
 
     function fadeInSequence(elements, options = {}) {
       // Anuluj poprzednią animację jeśli trwa
@@ -619,10 +549,26 @@
         currentAnimation = null;
       }
 
-      if (!elements.length) return;
+      if (!window.anime || !elements.length) return;
 
-      // Użyj animacji 3D liter
-      animateLetters3D(Array.from(elements), 0);
+      // Ustaw stan początkowy
+      elements.forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(50px) scale(0.9)';
+      });
+
+      currentAnimation = anime({
+        targets: Array.from(elements),
+        opacity: [0, 1],
+        translateY: [50, 0],
+        scale: [0.9, 1],
+        easing: 'easeOutExpo',
+        duration: 800,
+        delay: anime.stagger(150),
+        complete: () => {
+          currentAnimation = null;
+        }
+      });
     }
 
     function renderCurrentSlide() {
