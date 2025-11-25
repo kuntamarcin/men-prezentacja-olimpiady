@@ -99,18 +99,22 @@
     .slide-title {
       font-weight: 700;
       font-size: min(7vh, 5vw);
-      line-height: 1.1;
+      line-height: 1.35;
+      padding-top: 0.1em;
     }
 
     .slide-subtitle {
       font-weight: 400;
       font-size: min(4.5vh, 3.4vw);
-      line-height: 1.2;
+      line-height: 1.35;
+      padding-top: 0.1em;
     }
 
     .winners-header {
       font-weight: 700;
       font-size: min(5vh, 3.6vw);
+      line-height: 1.35;
+      padding-top: 0.1em;
       margin-bottom: 2vh;
     }
 
@@ -128,14 +132,43 @@
     .winner-name {
       font-weight: 700;
       font-size: min(5.5vh, 4vw);
-      line-height: 1.1;
+      line-height: 1.35;
+      padding-top: 0.1em;
     }
 
     .winner-details {
       font-weight: 400;
       font-size: min(3.5vh, 2.6vw);
-      line-height: 1.2;
+      line-height: 1.35;
+      padding-top: 0.1em;
       margin-top: 0.8vh;
+    }
+
+    /* Wskaźnik źródła danych */
+    #data-source-indicator {
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      z-index: 10;
+      font-size: 0.75rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      pointer-events: none;
+    }
+
+    #data-source-indicator.source-sheets {
+      background: rgba(15, 157, 88, 0.85);
+    }
+
+    #data-source-indicator.source-csv {
+      background: rgba(251, 188, 4, 0.85);
+      color: #000;
+    }
+
+    #data-source-indicator.source-error {
+      background: rgba(234, 67, 53, 0.85);
     }
 
     /* Ekran startowy */
@@ -229,6 +262,36 @@
     let slides = [];
     let currentSlideIndex = 0;
     let presentationStarted = false;
+    let dataSource = null; // 'sheets' | 'csv' | 'error'
+
+    // Funkcja do usuwania sierotek (w, z, i, o, u, a itp.) - zamienia spację po nich na &nbsp;
+    function fixOrphans(text) {
+      // Lista polskich spójników/przyimków które nie powinny zostawać na końcu linii
+      const orphans = ['a', 'i', 'o', 'u', 'w', 'z', 'do', 'na', 'po', 'za', 'od', 'we', 'ze', 'ku', 'o', 'nr', 'im.', 'woj.'];
+      let result = text;
+      orphans.forEach(word => {
+        // Szukamy słowa otoczonego spacjami (lub na początku) i zamieniamy spację po nim na nbsp
+        const regex = new RegExp(`(^|\\s)(${word.replace('.', '\\.')})\\s`, 'gi');
+        result = result.replace(regex, `$1$2\u00A0`);
+      });
+      return result;
+    }
+
+    function updateDataSourceIndicator() {
+      const el = document.getElementById('data-source-indicator');
+      if (!el) return;
+      el.classList.remove('source-sheets', 'source-csv', 'source-error');
+      if (dataSource === 'sheets') {
+        el.textContent = 'Źródło: Google Sheets (online)';
+        el.classList.add('source-sheets');
+      } else if (dataSource === 'csv') {
+        el.textContent = 'Źródło: lokalny plik CSV';
+        el.classList.add('source-csv');
+      } else {
+        el.textContent = 'Błąd wczytywania danych';
+        el.classList.add('source-error');
+      }
+    }
 
     function showError(message) {
       const el = document.getElementById("error-message");
@@ -423,11 +486,11 @@
 
       const titleEl = document.createElement("div");
       titleEl.className = "slide-title fade-seq";
-      titleEl.textContent = contest.title || "(bez tytułu)";
+      titleEl.innerHTML = fixOrphans(contest.title || "(bez tytułu)");
 
       const subtitleEl = document.createElement("div");
       subtitleEl.className = "slide-subtitle fade-seq";
-      subtitleEl.textContent = contest.organizer || "";
+      subtitleEl.innerHTML = fixOrphans(contest.organizer || "");
 
       container.appendChild(titleEl);
       container.appendChild(subtitleEl);
@@ -455,13 +518,13 @@
 
         const nameEl = document.createElement("div");
         nameEl.className = "winner-name";
-        nameEl.textContent = w.name;
+        nameEl.innerHTML = fixOrphans(w.name);
 
         const detailsEl = document.createElement("div");
         detailsEl.className = "winner-details";
-        const regionText = w.region ? `woj. ${w.region}` : "";
+        const regionText = w.region ? `woj.\u00A0${w.region}` : "";
         const detailsParts = [w.school, regionText].filter(Boolean);
-        detailsEl.textContent = detailsParts.join(" • ");
+        detailsEl.innerHTML = fixOrphans(detailsParts.join(" • "));
 
         item.appendChild(nameEl);
         item.appendChild(detailsEl);
@@ -620,6 +683,7 @@
         const table = await fetchSheetData();
         contests = parseContestsFromTable(table);
         slides = buildSlidesFromContests(contests);
+        dataSource = 'sheets';
       } catch (errSheets) {
         console.error("Błąd Google Sheets, próba wczytania CSV", errSheets);
         try {
@@ -627,12 +691,17 @@
           const rows = parseCsv(csvText);
           contests = parseContestsFromRows(rows);
           slides = buildSlidesFromContests(contests);
+          dataSource = 'csv';
         } catch (errCsv) {
           console.error("Błąd CSV", errCsv);
+          dataSource = 'error';
+          updateDataSourceIndicator();
           showError("Błąd podczas wczytywania danych z Google Sheets i z pliku laureaci.csv.");
           return;
         }
       }
+
+      updateDataSourceIndicator();
 
       if (!slides.length) {
         showError("Nie znaleziono żadnych konkursów w danych.");
@@ -679,6 +748,9 @@
 
     <!-- Komunikat błędu -->
     <div id="error-message"></div>
+
+    <!-- Wskaźnik źródła danych -->
+    <div id="data-source-indicator"></div>
   </div>
 </body>
 </html>
