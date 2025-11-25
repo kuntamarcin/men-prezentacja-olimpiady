@@ -348,17 +348,16 @@
       const rows = table.rows || [];
 
       function findCol(label) {
-        return cols.findIndex(c => (c.label || "").trim() === label);
+        return cols.findIndex(c => (c.label || "").trim().toLowerCase() === label.toLowerCase());
       }
 
-      const idxID = findCol("ID");
       const idxName = findCol("nazwa_konkursu");
       const idxOrg = findCol("organizator");
       const idxWinnerName = findCol("imiona_nazwiska_laureata");
       const idxSchool = findCol("nazwa_szkoly");
       const idxRegion = findCol("wojewodztwo");
 
-      if (idxID === -1 || idxName === -1 || idxOrg === -1 || idxWinnerName === -1 || idxSchool === -1 || idxRegion === -1) {
+      if (idxName === -1 || idxOrg === -1 || idxWinnerName === -1 || idxSchool === -1 || idxRegion === -1) {
         throw new Error("Nie znaleziono oczekiwanych nagłówków kolumn w arkuszu.");
       }
 
@@ -367,32 +366,28 @@
 
       for (const row of rows) {
         const c = row.c || [];
-        const idVal = c[idxID] && c[idxID].v != null ? String(c[idxID].v).trim() : "";
         const nameVal = c[idxName] && c[idxName].v != null ? String(c[idxName].v).trim() : "";
         const orgVal = c[idxOrg] && c[idxOrg].v != null ? String(c[idxOrg].v).trim() : "";
         const winnerNameVal = c[idxWinnerName] && c[idxWinnerName].v != null ? String(c[idxWinnerName].v).trim() : "";
         const schoolVal = c[idxSchool] && c[idxSchool].v != null ? String(c[idxSchool].v).trim() : "";
         const regionVal = c[idxRegion] && c[idxRegion].v != null ? String(c[idxRegion].v).trim() : "";
 
-        const allEmpty = !idVal && !nameVal && !orgVal && !winnerNameVal && !schoolVal && !regionVal;
+        const allEmpty = !nameVal && !orgVal && !winnerNameVal && !schoolVal && !regionVal;
         if (allEmpty) continue;
 
-        if (idVal) {
+        // Jeśli wiersz ma nazwę konkursu -> nowy konkurs
+        if (nameVal) {
           if (currentContest) {
             result.push(currentContest);
           }
           currentContest = {
-            id: idVal,
             title: nameVal,
             organizer: orgVal,
             winners: []
           };
-        } else if (!currentContest) {
-          continue;
         }
 
-        if (!currentContest.title && nameVal) currentContest.title = nameVal;
-        if (!currentContest.organizer && orgVal) currentContest.organizer = orgVal;
+        if (!currentContest) continue;
 
         if (winnerNameVal) {
           currentContest.winners.push({
@@ -415,32 +410,28 @@
       let currentContest = null;
 
       for (const r of rows) {
-        const idVal = (r["ID"] || "").trim();
         const nameVal = (r["nazwa_konkursu"] || "").trim();
         const orgVal = (r["organizator"] || "").trim();
         const winnerNameVal = (r["imiona_nazwiska_laureata"] || "").trim();
         const schoolVal = (r["nazwa_szkoly"] || "").trim();
         const regionVal = (r["wojewodztwo"] || "").trim();
 
-        const allEmpty = !idVal && !nameVal && !orgVal && !winnerNameVal && !schoolVal && !regionVal;
+        const allEmpty = !nameVal && !orgVal && !winnerNameVal && !schoolVal && !regionVal;
         if (allEmpty) continue;
 
-        if (idVal) {
+        // Jeśli wiersz ma nazwę konkursu -> nowy konkurs
+        if (nameVal) {
           if (currentContest) {
             result.push(currentContest);
           }
           currentContest = {
-            id: idVal,
             title: nameVal,
             organizer: orgVal,
             winners: []
           };
-        } else if (!currentContest) {
-          continue;
         }
 
-        if (!currentContest.title && nameVal) currentContest.title = nameVal;
-        if (!currentContest.organizer && orgVal) currentContest.organizer = orgVal;
+        if (!currentContest) continue;
 
         if (winnerNameVal) {
           currentContest.winners.push({
