@@ -227,6 +227,8 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     '  <meta charset="UTF-8" />\n' +
     '  <title>Prezentacja laureatów (offline)</title>\n' +
     '  <meta name="viewport" content="width=device-width, initial-scale=1.0" />\n' +
+    '  <link rel="preload" href="bg-1.mp4" as="video" type="video/mp4">\n' +
+    '  <link rel="preload" href="bg-2.mp4" as="video" type="video/mp4">\n' +
     '  <style>' + css + '</style>\n' +
     '  <script>' + animeJsCode + '</' + 'script>\n' +
     '  <script>' + jsCode + '</' + 'script>\n' +
