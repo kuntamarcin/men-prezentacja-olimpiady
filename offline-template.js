@@ -88,28 +88,12 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       const titleEl = document.createElement('div');
       titleEl.className = 'slide-title fade-seq';
       titleEl.innerHTML = fixOrphans(contest.title || '(bez tytulu)');
-      wrapLetters(titleEl);
       const subtitleEl = document.createElement('div');
       subtitleEl.className = 'slide-subtitle fade-seq';
       subtitleEl.innerHTML = fixOrphans(contest.organizer || '');
       container.appendChild(titleEl);
       container.appendChild(subtitleEl);
       return container;
-    }
-
-    function wrapLetters(element) {
-      if (!element) return;
-      if (element.querySelector('.letter')) return; // już opakowane
-      const text = element.textContent;
-      element.innerHTML = '';
-      const frag = document.createDocumentFragment();
-      for (var i = 0; i < text.length; i++) {
-        var span = document.createElement('span');
-        span.textContent = text[i];
-        span.className = 'letter';
-        frag.appendChild(span);
-      }
-      element.appendChild(frag);
     }
 
     function createWinnersSlideContent(contest) {
@@ -126,9 +110,8 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
         const item = document.createElement('div');
         item.className = 'winner fade-seq';
         const nameEl = document.createElement('div');
-        nameEl.className = 'winner-name fade-seq';
+        nameEl.className = 'winner-name';
         nameEl.innerHTML = fixOrphans(w.name);
-        wrapLetters(nameEl);
         const detailsEl = document.createElement('div');
         detailsEl.className = 'winner-details';
         const regionText = w.region ? 'woj.\\u00A0' + w.region : '';
@@ -148,49 +131,11 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       if (currentAnimation) { currentAnimation.pause(); currentAnimation = null; }
       if (!window.anime || !elements.length) return;
 
-      const letterNodes = [];
       for (let i = 0; i < elements.length; i++) {
-        const el = elements[i];
-        wrapLetters(el);
-        const letters = el.querySelectorAll('.letter');
-        for (let j = 0; j < letters.length; j++) {
-          letterNodes.push(letters[j]);
-        }
+        elements[i].style.opacity = '0';
+        elements[i].style.transform = 'translateY(50px) scale(0.9)';
       }
-
-      if (letterNodes.length) {
-        for (let i = 0; i < letterNodes.length; i++) {
-          letterNodes[i].style.display = 'inline-block';
-          letterNodes[i].style.opacity = '0';
-          letterNodes[i].style.transform = 'translateY(30px) translateZ(-40px) rotateX(12deg) scale(0.9)';
-        }
-
-        currentAnimation = anime({
-          targets: letterNodes,
-          opacity: [0,1],
-          translateY: [30,0],
-          translateZ: [-40,0],
-          rotateX: [12,0],
-          scale: [0.9,1],
-          easing: 'easeOutCubic',
-          duration: 600,
-          delay: anime.stagger(25),
-          complete: function() { currentAnimation = null; }
-        });
-        return;
-      }
-
-      // fallback – gdyby coś poszło nie tak z literami
-      currentAnimation = anime({
-        targets: Array.from(elements),
-        opacity: [0,1],
-        translateY: [30,0],
-        scale: [0.95,1],
-        easing: 'easeOutCubic',
-        duration: 700,
-        delay: anime.stagger(120),
-        complete: function() { currentAnimation = null; }
-      });
+      currentAnimation = anime({ targets: Array.from(elements), opacity: [0,1], translateY: [50,0], scale: [0.9,1], easing: 'easeOutExpo', duration: 800, delay: anime.stagger(150), complete: function() { currentAnimation = null; } });
     }
 
     function renderCurrentSlide() {

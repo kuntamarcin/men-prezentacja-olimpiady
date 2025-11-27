@@ -466,7 +466,6 @@
       const titleEl = document.createElement("div");
       titleEl.className = "slide-title fade-seq";
       titleEl.innerHTML = fixOrphans(contest.title || "(bez tytułu)");
-      wrapLetters(titleEl);
 
       const subtitleEl = document.createElement("div");
       subtitleEl.className = "slide-subtitle fade-seq";
@@ -476,21 +475,6 @@
       container.appendChild(subtitleEl);
 
       return container;
-    }
-
-    function wrapLetters(element) {
-      if (!element) return;
-      if (element.querySelector('.letter')) return; // już opakowane
-      const text = element.textContent;
-      element.innerHTML = "";
-      const frag = document.createDocumentFragment();
-      for (const ch of text) {
-        const span = document.createElement("span");
-        span.textContent = ch;
-        span.className = "letter";
-        frag.appendChild(span);
-      }
-      element.appendChild(frag);
     }
 
     function createWinnersSlideContent(contest) {
@@ -512,9 +496,8 @@
         item.className = "winner fade-seq";
 
         const nameEl = document.createElement("div");
-        nameEl.className = "winner-name fade-seq";
+        nameEl.className = "winner-name";
         nameEl.innerHTML = fixOrphans(w.name);
-        wrapLetters(nameEl);
 
         const detailsEl = document.createElement("div");
         detailsEl.className = "winner-details";
@@ -543,47 +526,24 @@
 
       if (!window.anime || !elements.length) return;
 
-      const letterNodes = [];
       elements.forEach(el => {
-        // upewnij się, że każdy fade-seq ma litery
-        wrapLetters(el);
-        el.querySelectorAll('.letter').forEach(node => letterNodes.push(node));
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(50px) scale(0.9)';
       });
 
-      if (letterNodes.length) {
-        letterNodes.forEach(node => {
-          node.style.display = 'inline-block';
-          node.style.opacity = '0';
-          node.style.transform = 'translateY(30px) translateZ(-40px) rotateX(12deg) scale(0.9)';
-        });
-
-        currentAnimation = anime({
-          targets: letterNodes,
-          opacity: [0, 1],
-          translateY: [30, 0],
-          translateZ: [-40, 0],
-          rotateX: [12, 0],
-          scale: [0.9, 1],
-          easing: 'easeOutCubic',
-          duration: 600,
-          delay: anime.stagger(25),
-          complete: () => { currentAnimation = null; }
-        });
-        return;
-      }
-
-      // fallback – gdyby z jakiegoś powodu nie było liter
       currentAnimation = anime({
         targets: Array.from(elements),
         opacity: [0, 1],
-        translateY: [30, 0],
-        scale: [0.95, 1],
-        easing: 'easeOutCubic',
-        duration: 700,
-        delay: anime.stagger(120),
+        translateY: [50, 0],
+        scale: [0.9, 1],
+        easing: 'easeOutExpo',
+        duration: 800,
+        delay: anime.stagger(150),
         complete: () => {
           currentAnimation = null;
         }
+      });
+    }
       });
     }
 
