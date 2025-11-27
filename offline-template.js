@@ -98,12 +98,14 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     }
 
     function wrapLetters(element) {
+      if (!element) return;
+      if (element.querySelector('.letter')) return; // już opakowane
       const text = element.textContent;
       element.innerHTML = '';
       const frag = document.createDocumentFragment();
-      for (const ch of text) {
-        const span = document.createElement('span');
-        span.textContent = ch;
+      for (var i = 0; i < text.length; i++) {
+        var span = document.createElement('span');
+        span.textContent = text[i];
         span.className = 'letter';
         frag.appendChild(span);
       }
@@ -146,52 +148,47 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       if (currentAnimation) { currentAnimation.pause(); currentAnimation = null; }
       if (!window.anime || !elements.length) return;
 
-      for (let i = 0; i < elements.length; i++) {
-        elements[i].style.opacity = '1';
-        elements[i].style.transform = 'none';
-      }
-
       const letterNodes = [];
       for (let i = 0; i < elements.length; i++) {
         const el = elements[i];
-        if (el.classList.contains('winner-name') || el.classList.contains('slide-title')) {
-          const letters = el.querySelectorAll('.letter');
-          for (let j = 0; j < letters.length; j++) {
-            letterNodes.push(letters[j]);
-          }
+        wrapLetters(el);
+        const letters = el.querySelectorAll('.letter');
+        for (let j = 0; j < letters.length; j++) {
+          letterNodes.push(letters[j]);
         }
       }
 
-      if (!letterNodes.length) {
+      if (letterNodes.length) {
+        for (let i = 0; i < letterNodes.length; i++) {
+          letterNodes[i].style.display = 'inline-block';
+          letterNodes[i].style.opacity = '0';
+          letterNodes[i].style.transform = 'translateY(30px) translateZ(-40px) rotateX(12deg) scale(0.9)';
+        }
+
         currentAnimation = anime({
-          targets: Array.from(elements),
+          targets: letterNodes,
           opacity: [0,1],
           translateY: [30,0],
-          scale: [0.95,1],
+          translateZ: [-40,0],
+          rotateX: [12,0],
+          scale: [0.9,1],
           easing: 'easeOutCubic',
-          duration: 700,
-          delay: anime.stagger(120),
+          duration: 600,
+          delay: anime.stagger(25),
           complete: function() { currentAnimation = null; }
         });
         return;
       }
 
-      for (let i = 0; i < letterNodes.length; i++) {
-        letterNodes[i].style.display = 'inline-block';
-        letterNodes[i].style.opacity = '0';
-        letterNodes[i].style.transform = 'translateY(30px) translateZ(-40px) rotateX(12deg) scale(0.9)';
-      }
-
+      // fallback – gdyby coś poszło nie tak z literami
       currentAnimation = anime({
-        targets: letterNodes,
+        targets: Array.from(elements),
         opacity: [0,1],
         translateY: [30,0],
-        translateZ: [-40,0],
-        rotateX: [12,0],
-        scale: [0.9,1],
+        scale: [0.95,1],
         easing: 'easeOutCubic',
-        duration: 600,
-        delay: anime.stagger(25),
+        duration: 700,
+        delay: anime.stagger(120),
         complete: function() { currentAnimation = null; }
       });
     }

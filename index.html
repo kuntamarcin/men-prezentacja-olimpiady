@@ -479,6 +479,8 @@
     }
 
     function wrapLetters(element) {
+      if (!element) return;
+      if (element.querySelector('.letter')) return; // już opakowane
       const text = element.textContent;
       element.innerHTML = "";
       const frag = document.createDocumentFragment();
@@ -541,48 +543,44 @@
 
       if (!window.anime || !elements.length) return;
 
-      elements.forEach(el => {
-        el.style.opacity = '1';
-        el.style.transform = 'none';
-      });
-
       const letterNodes = [];
       elements.forEach(el => {
-        if (el.classList.contains('winner-name') || el.classList.contains('slide-title')) {
-          el.querySelectorAll('.letter').forEach(node => letterNodes.push(node));
-        }
+        // upewnij się, że każdy fade-seq ma litery
+        wrapLetters(el);
+        el.querySelectorAll('.letter').forEach(node => letterNodes.push(node));
       });
 
-      if (!letterNodes.length) {
+      if (letterNodes.length) {
+        letterNodes.forEach(node => {
+          node.style.display = 'inline-block';
+          node.style.opacity = '0';
+          node.style.transform = 'translateY(30px) translateZ(-40px) rotateX(12deg) scale(0.9)';
+        });
+
         currentAnimation = anime({
-          targets: Array.from(elements),
+          targets: letterNodes,
           opacity: [0, 1],
           translateY: [30, 0],
-          scale: [0.95, 1],
+          translateZ: [-40, 0],
+          rotateX: [12, 0],
+          scale: [0.9, 1],
           easing: 'easeOutCubic',
-          duration: 700,
-          delay: anime.stagger(120),
+          duration: 600,
+          delay: anime.stagger(25),
           complete: () => { currentAnimation = null; }
         });
         return;
       }
 
-      letterNodes.forEach(node => {
-        node.style.display = 'inline-block';
-        node.style.opacity = '0';
-        node.style.transform = 'translateY(30px) translateZ(-40px) rotateX(12deg) scale(0.9)';
-      });
-
+      // fallback – gdyby z jakiegoś powodu nie było liter
       currentAnimation = anime({
-        targets: letterNodes,
+        targets: Array.from(elements),
         opacity: [0, 1],
         translateY: [30, 0],
-        translateZ: [-40, 0],
-        rotateX: [12, 0],
-        scale: [0.9, 1],
+        scale: [0.95, 1],
         easing: 'easeOutCubic',
-        duration: 600,
-        delay: anime.stagger(25),
+        duration: 700,
+        delay: anime.stagger(120),
         complete: () => {
           currentAnimation = null;
         }
