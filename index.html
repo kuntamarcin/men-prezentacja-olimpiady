@@ -139,6 +139,7 @@
       font-size: min(4.4vh, 3.2vw);
       line-height: 1.35;
       padding-top: 0.1em;
+      color: #0679ca;
     }
 
     .winner-details {
@@ -476,6 +477,19 @@
       return container;
     }
 
+    function wrapLetters(element) {
+      const text = element.textContent;
+      element.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      for (const ch of text) {
+        const span = document.createElement("span");
+        span.textContent = ch;
+        span.className = "letter";
+        frag.appendChild(span);
+      }
+      element.appendChild(frag);
+    }
+
     function createWinnersSlideContent(contest) {
       const container = document.createElement("div");
       container.className = "slide-content";
@@ -497,6 +511,7 @@
         const nameEl = document.createElement("div");
         nameEl.className = "winner-name";
         nameEl.innerHTML = fixOrphans(w.name);
+        wrapLetters(nameEl);
 
         const detailsEl = document.createElement("div");
         detailsEl.className = "winner-details";
@@ -526,18 +541,45 @@
       if (!window.anime || !elements.length) return;
 
       elements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(50px) scale(0.9)';
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+
+      const letterNodes = [];
+      elements.forEach(el => {
+        if (el.classList.contains('winner-name') || el.classList.contains('slide-title')) {
+          el.querySelectorAll('.letter').forEach(node => letterNodes.push(node));
+        }
+      });
+
+      if (!letterNodes.length) {
+        currentAnimation = anime({
+          targets: Array.from(elements),
+          opacity: [0, 1],
+          translateY: [30, 0],
+          scale: [0.95, 1],
+          easing: 'easeOutCubic',
+          duration: 700,
+          delay: anime.stagger(120),
+          complete: () => { currentAnimation = null; }
+        });
+        return;
+      }
+
+      letterNodes.forEach(node => {
+        node.style.display = 'inline-block';
+        node.style.opacity = '0';
+        node.style.transform = 'translateY(30px) scale(0.9)';
       });
 
       currentAnimation = anime({
-        targets: Array.from(elements),
+        targets: letterNodes,
         opacity: [0, 1],
-        translateY: [50, 0],
+        translateY: [30, 0],
         scale: [0.9, 1],
-        easing: 'easeOutExpo',
-        duration: 800,
-        delay: anime.stagger(150),
+        easing: 'easeOutCubic',
+        duration: 600,
+        delay: anime.stagger(25),
         complete: () => {
           currentAnimation = null;
         }

@@ -20,7 +20,7 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     .winners-header { font-weight: 700; font-size: min(4vh, 2.88vw); line-height: 1.35; padding-top: 0.1em; margin-bottom: 2vh; }
     .winners-list { display: flex; flex-direction: column; gap: 2vh; align-items: center; }
     .winner { max-width: 80vw; }
-    .winner-name { font-weight: 700; font-size: min(4.4vh, 3.2vw); line-height: 1.35; padding-top: 0.1em; }
+    .winner-name { font-weight: 700; font-size: min(4.4vh, 3.2vw); line-height: 1.35; padding-top: 0.1em; color: #0679ca; }
     .winner-details { font-weight: 400; font-size: min(2.8vh, 2.08vw); line-height: 1.35; padding-top: 0.1em; margin-top: 0.8vh; }
     #loading-overlay { position: absolute; inset: 0; z-index: 5; background: #000; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #fff; text-align: center; }
     #loading-overlay.hidden { display: none; }
@@ -96,6 +96,19 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       return container;
     }
 
+    function wrapLetters(element) {
+      const text = element.textContent;
+      element.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for (const ch of text) {
+        const span = document.createElement('span');
+        span.textContent = ch;
+        span.className = 'letter';
+        frag.appendChild(span);
+      }
+      element.appendChild(frag);
+    }
+
     function createWinnersSlideContent(contest) {
       const container = document.createElement('div');
       container.className = 'slide-content';
@@ -112,6 +125,7 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
         const nameEl = document.createElement('div');
         nameEl.className = 'winner-name';
         nameEl.innerHTML = fixOrphans(w.name);
+        wrapLetters(nameEl);
         const detailsEl = document.createElement('div');
         detailsEl.className = 'winner-details';
         const regionText = w.region ? 'woj.\\u00A0' + w.region : '';
@@ -130,11 +144,53 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     function fadeInSequence(elements) {
       if (currentAnimation) { currentAnimation.pause(); currentAnimation = null; }
       if (!window.anime || !elements.length) return;
+
       for (let i = 0; i < elements.length; i++) {
-        elements[i].style.opacity = '0';
-        elements[i].style.transform = 'translateY(50px) scale(0.9)';
+        elements[i].style.opacity = '1';
+        elements[i].style.transform = 'none';
       }
-      currentAnimation = anime({ targets: Array.from(elements), opacity: [0,1], translateY: [50,0], scale: [0.9,1], easing: 'easeOutExpo', duration: 800, delay: anime.stagger(150), complete: function() { currentAnimation = null; } });
+
+      const letterNodes = [];
+      for (let i = 0; i < elements.length; i++) {
+        const el = elements[i];
+        if (el.classList.contains('winner-name') || el.classList.contains('slide-title')) {
+          const letters = el.querySelectorAll('.letter');
+          for (let j = 0; j < letters.length; j++) {
+            letterNodes.push(letters[j]);
+          }
+        }
+      }
+
+      if (!letterNodes.length) {
+        currentAnimation = anime({
+          targets: Array.from(elements),
+          opacity: [0,1],
+          translateY: [30,0],
+          scale: [0.95,1],
+          easing: 'easeOutCubic',
+          duration: 700,
+          delay: anime.stagger(120),
+          complete: function() { currentAnimation = null; }
+        });
+        return;
+      }
+
+      for (let i = 0; i < letterNodes.length; i++) {
+        letterNodes[i].style.display = 'inline-block';
+        letterNodes[i].style.opacity = '0';
+        letterNodes[i].style.transform = 'translateY(30px) scale(0.9)';
+      }
+
+      currentAnimation = anime({
+        targets: letterNodes,
+        opacity: [0,1],
+        translateY: [30,0],
+        scale: [0.9,1],
+        easing: 'easeOutCubic',
+        duration: 600,
+        delay: anime.stagger(25),
+        complete: function() { currentAnimation = null; }
+      });
     }
 
     function renderCurrentSlide() {
