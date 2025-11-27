@@ -466,6 +466,7 @@
       const titleEl = document.createElement("div");
       titleEl.className = "slide-title fade-seq";
       titleEl.innerHTML = fixOrphans(contest.title || "(bez tytułu)");
+      wrapLetters(titleEl);
 
       const subtitleEl = document.createElement("div");
       subtitleEl.className = "slide-subtitle fade-seq";
@@ -509,7 +510,7 @@
         item.className = "winner fade-seq";
 
         const nameEl = document.createElement("div");
-        nameEl.className = "winner-name";
+        nameEl.className = "winner-name fade-seq";
         nameEl.innerHTML = fixOrphans(w.name);
         wrapLetters(nameEl);
 

@@ -88,6 +88,7 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       const titleEl = document.createElement('div');
       titleEl.className = 'slide-title fade-seq';
       titleEl.innerHTML = fixOrphans(contest.title || '(bez tytulu)');
+      wrapLetters(titleEl);
       const subtitleEl = document.createElement('div');
       subtitleEl.className = 'slide-subtitle fade-seq';
       subtitleEl.innerHTML = fixOrphans(contest.organizer || '');
@@ -123,7 +124,7 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
         const item = document.createElement('div');
         item.className = 'winner fade-seq';
         const nameEl = document.createElement('div');
-        nameEl.className = 'winner-name';
+        nameEl.className = 'winner-name fade-seq';
         nameEl.innerHTML = fixOrphans(w.name);
         wrapLetters(nameEl);
         const detailsEl = document.createElement('div');
