@@ -6,6 +6,7 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     @font-face { font-family: "UniSansHeavyCAPS"; src: url("fonts/Uni Sans Heavy.otf") format("opentype"); font-weight: 400; font-style: normal; }
     @font-face { font-family: "UniSansHeavyCAPS"; src: url("fonts/Uni Sans Heavy.otf") format("opentype"); font-weight: 700; font-style: normal; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    b, strong { font-weight: normal; color: #0679ca; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
     body { font-family: "UniSansHeavyCAPS", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; color: #000; }
     #app { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
