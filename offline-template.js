@@ -126,16 +126,61 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       return container;
     }
 
+    function wrapLetters(element) {
+      if (!element) return;
+      if (element.querySelector('.letter')) return;
+      const text = element.textContent;
+      element.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      for (var i = 0; i < text.length; i++) {
+        var span = document.createElement('span');
+        span.textContent = text[i];
+        span.className = 'letter';
+        span.style.display = 'inline-block';
+        if (text[i] === ' ') span.style.minWidth = '0.2em';
+        frag.appendChild(span);
+      }
+      element.appendChild(frag);
+    }
+
     let currentAnimation = null;
     function fadeInSequence(elements) {
       if (currentAnimation) { currentAnimation.pause(); currentAnimation = null; }
       if (!window.anime || !elements.length) return;
 
+      const allLetters = [];
       for (let i = 0; i < elements.length; i++) {
-        elements[i].style.opacity = '0';
-        elements[i].style.transform = 'translateY(50px) scale(0.9)';
+        elements[i].style.opacity = '1';
+        elements[i].style.transform = 'none';
+        wrapLetters(elements[i]);
+        const letters = elements[i].querySelectorAll('.letter');
+        for (let j = 0; j < letters.length; j++) allLetters.push(letters[j]);
       }
-      currentAnimation = anime({ targets: Array.from(elements), opacity: [0,1], translateY: [50,0], scale: [0.9,1], easing: 'easeOutExpo', duration: 800, delay: anime.stagger(150), complete: function() { currentAnimation = null; } });
+
+      if (!allLetters.length) {
+        for (let i = 0; i < elements.length; i++) {
+           elements[i].style.opacity = '0';
+           elements[i].style.transform = 'translateY(50px)';
+        }
+        currentAnimation = anime({ targets: Array.from(elements), opacity: [0,1], translateY: [50,0], easing: 'easeOutExpo', duration: 800, delay: anime.stagger(150) });
+        return;
+      }
+
+      for (let i = 0; i < allLetters.length; i++) {
+        allLetters[i].style.opacity = '0';
+        allLetters[i].style.transform = 'translateY(30px) translateZ(-30px) rotateX(20deg)';
+      }
+
+      currentAnimation = anime({
+        targets: allLetters,
+        opacity: [0,1],
+        translateY: [30,0],
+        translateZ: [-30,0],
+        rotateX: [20,0],
+        easing: 'easeOutExpo',
+        duration: 900,
+        delay: anime.stagger(30)
+      });
     }
 
     function renderCurrentSlide() {

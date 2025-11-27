@@ -516,7 +516,22 @@
       return container;
     }
 
-    let currentAnimation = null;
+    function wrapLetters(element) {
+      if (!element) return;
+      if (element.querySelector('.letter')) return;
+      const text = element.textContent;
+      element.innerHTML = "";
+      const frag = document.createDocumentFragment();
+      for (const ch of text) {
+        const span = document.createElement("span");
+        span.textContent = ch;
+        span.className = "letter";
+        span.style.display = "inline-block";
+        if (ch === " ") span.style.minWidth = "0.2em";
+        frag.appendChild(span);
+      }
+      element.appendChild(frag);
+    }
 
     function fadeInSequence(elements, options = {}) {
       if (currentAnimation) {
@@ -526,22 +541,46 @@
 
       if (!window.anime || !elements.length) return;
 
+      const allLetters = [];
+
       elements.forEach(el => {
-        el.style.opacity = '0';
-        el.style.transform = 'translateY(50px) scale(0.9)';
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+        wrapLetters(el);
+        el.querySelectorAll('.letter').forEach(l => allLetters.push(l));
+      });
+
+      if (!allLetters.length) {
+        // Fallback dla elementów bez tekstu (np. obrazki jeśli byłyby)
+        elements.forEach(el => {
+           el.style.opacity = '0';
+           el.style.transform = 'translateY(50px)';
+        });
+        currentAnimation = anime({
+          targets: Array.from(elements),
+          opacity: [0, 1],
+          translateY: [50, 0],
+          easing: 'easeOutExpo',
+          duration: 800,
+          delay: anime.stagger(150)
+        });
+        return;
+      }
+
+      allLetters.forEach(l => {
+        l.style.opacity = '0';
+        l.style.transform = 'translateY(30px) translateZ(-30px) rotateX(20deg)';
       });
 
       currentAnimation = anime({
-        targets: Array.from(elements),
+        targets: allLetters,
         opacity: [0, 1],
-        translateY: [50, 0],
-        scale: [0.9, 1],
+        translateY: [30, 0],
+        translateZ: [-30, 0],
+        rotateX: [20, 0],
         easing: 'easeOutExpo',
-        duration: 800,
-        delay: anime.stagger(150),
-        complete: () => {
-          currentAnimation = null;
-        }
+        duration: 900,
+        delay: anime.stagger(30)
       });
     }
 
