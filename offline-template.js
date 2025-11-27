@@ -17,11 +17,11 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     .slide-content { max-width: 80vw; max-height: 90vh; text-align: center; color: #000; display: flex; flex-direction: column; justify-content: center; gap: 3vh; word-wrap: break-word; overflow: visible; perspective: 1000px; }
     .slide-title { font-weight: 700; font-size: min(7vh, 5vw); line-height: 1.35; padding-top: 0.1em; }
     .slide-subtitle { font-weight: 400; font-size: min(4.5vh, 3.4vw); line-height: 1.35; padding-top: 0.1em; }
-    .winners-header { font-weight: 700; font-size: min(5vh, 3.6vw); line-height: 1.35; padding-top: 0.1em; margin-bottom: 2vh; }
+    .winners-header { font-weight: 700; font-size: min(4vh, 2.88vw); line-height: 1.35; padding-top: 0.1em; margin-bottom: 2vh; }
     .winners-list { display: flex; flex-direction: column; gap: 2vh; align-items: center; }
     .winner { max-width: 80vw; }
-    .winner-name { font-weight: 700; font-size: min(5.5vh, 4vw); line-height: 1.35; padding-top: 0.1em; }
-    .winner-details { font-weight: 400; font-size: min(3.5vh, 2.6vw); line-height: 1.35; padding-top: 0.1em; margin-top: 0.8vh; }
+    .winner-name { font-weight: 700; font-size: min(4.4vh, 3.2vw); line-height: 1.35; padding-top: 0.1em; }
+    .winner-details { font-weight: 400; font-size: min(2.8vh, 2.08vw); line-height: 1.35; padding-top: 0.1em; margin-top: 0.8vh; }
     #loading-overlay { position: absolute; inset: 0; z-index: 5; background: #000; display: flex; align-items: center; justify-content: center; flex-direction: column; color: #fff; text-align: center; }
     #loading-overlay.hidden { display: none; }
     .loader { width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
@@ -48,9 +48,10 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       const orphans = ['a','i','o','u','w','z','do','na','po','za','od','we','ze','ku','o','nr','im.','woj.'];
       let result = text;
       orphans.forEach(function(word) {
-        const regex = new RegExp('(^|\\\\s)(' + word.replace('.', '\\\\.') + ')\\\\s','gi');
-        result = result.replace(regex, '$1$2\\u00A0');
+        const regex = new RegExp('(^|\\\\\\\\s)(' + word.replace('.', '\\\\\\\\.') + ')\\\\\\\\s','gi');
+        result = result.replace(regex, '$1$2\\\\u00A0');
       });
+      result = result.replace(/Olimpiada/g, "<b>Olimpiada</b>");
       return result;
     }
 

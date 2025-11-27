@@ -117,7 +117,7 @@
 
     .winners-header {
       font-weight: 700;
-      font-size: min(5vh, 3.6vw);
+      font-size: min(4vh, 2.88vw);
       line-height: 1.35;
       padding-top: 0.1em;
       margin-bottom: 2vh;
@@ -136,14 +136,14 @@
 
     .winner-name {
       font-weight: 700;
-      font-size: min(5.5vh, 4vw);
+      font-size: min(4.4vh, 3.2vw);
       line-height: 1.35;
       padding-top: 0.1em;
     }
 
     .winner-details {
       font-weight: 400;
-      font-size: min(3.5vh, 2.6vw);
+      font-size: min(2.8vh, 2.08vw);
       line-height: 1.35;
       padding-top: 0.1em;
       margin-top: 0.8vh;
@@ -339,6 +339,7 @@
         const regex = new RegExp(`(^|\\s)(${word.replace('.', '\\.')})\\s`, 'gi');
         result = result.replace(regex, `$1$2\u00A0`);
       });
+      result = result.replace(/Olimpiada/g, "<b>Olimpiada</b>");
       return result;
     }
 
