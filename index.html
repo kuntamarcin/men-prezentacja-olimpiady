@@ -318,6 +318,10 @@
     #error-message.visible {
       display: flex;
     }
+    .letter {
+      display: inline-block;
+      line-height: 1em;
+    }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" defer></script>
@@ -518,19 +522,12 @@
 
     function wrapLetters(element) {
       if (!element) return;
+      // Jeśli już ma litery, nie rób nic
       if (element.querySelector('.letter')) return;
-      const text = element.textContent;
-      element.innerHTML = "";
-      const frag = document.createDocumentFragment();
-      for (const ch of text) {
-        const span = document.createElement("span");
-        span.textContent = ch;
-        span.className = "letter";
-        span.style.display = "inline-block";
-        if (ch === " ") span.style.minWidth = "0.2em";
-        frag.appendChild(span);
-      }
-      element.appendChild(frag);
+      
+      // Owijamy każdy znak niebędący białym znakiem w span.letter
+      // Spacje pozostają naturalne
+      element.innerHTML = element.textContent.replace(/([^\x00-\x80]|\w)/g, "<span class='letter'>$&</span>");
     }
 
     function fadeInSequence(elements, options = {}) {
@@ -544,43 +541,39 @@
       const allLetters = [];
 
       elements.forEach(el => {
+        // Reset stanu kontenera
         el.style.opacity = '1';
         el.style.transform = 'none';
+        
         wrapLetters(el);
-        el.querySelectorAll('.letter').forEach(l => allLetters.push(l));
+        
+        // Zbierz litery
+        const letters = el.querySelectorAll('.letter');
+        if (letters.length > 0) {
+           letters.forEach(l => allLetters.push(l));
+        } else {
+           // Jeśli brak liter (np. same spacje?), to potraktujmy cały element jako obiekt animacji
+           allLetters.push(el);
+        }
       });
 
-      if (!allLetters.length) {
-        // Fallback dla elementów bez tekstu (np. obrazki jeśli byłyby)
-        elements.forEach(el => {
-           el.style.opacity = '0';
-           el.style.transform = 'translateY(50px)';
-        });
-        currentAnimation = anime({
-          targets: Array.from(elements),
-          opacity: [0, 1],
-          translateY: [50, 0],
-          easing: 'easeOutExpo',
-          duration: 800,
-          delay: anime.stagger(150)
-        });
-        return;
-      }
+      if (!allLetters.length) return;
 
+      // Ustaw stan początkowy
       allLetters.forEach(l => {
         l.style.opacity = '0';
-        l.style.transform = 'translateY(30px) translateZ(-30px) rotateX(20deg)';
+        l.style.transform = 'translateY(20px) scale(0.9)';
       });
 
+      // Uruchom animację
       currentAnimation = anime({
         targets: allLetters,
         opacity: [0, 1],
-        translateY: [30, 0],
-        translateZ: [-30, 0],
-        rotateX: [20, 0],
-        easing: 'easeOutExpo',
-        duration: 900,
-        delay: anime.stagger(30)
+        translateY: [20, 0],
+        scale: [0.9, 1],
+        easing: 'easeOutCubic',
+        duration: 800,
+        delay: anime.stagger(30) // opóźnienie między kolejnymi literami
       });
     }
 

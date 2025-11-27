@@ -34,6 +34,7 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     #start-button:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,0.5); }
     #start-button:active { transform: translateY(1px); box-shadow: 0 3px 10px rgba(0,0,0,0.5); }
     .fade-seq { opacity: 0; transform: translateY(10px); }
+    .letter { display: inline-block; line-height: 1em; }
     #error-message { position: absolute; inset: 0; z-index: 3; display: none; align-items: center; justify-content: center; padding: 2rem; text-align: center; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.1rem; }
     #error-message.visible { display: flex; }
   `;
@@ -129,18 +130,7 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     function wrapLetters(element) {
       if (!element) return;
       if (element.querySelector('.letter')) return;
-      const text = element.textContent;
-      element.innerHTML = '';
-      const frag = document.createDocumentFragment();
-      for (var i = 0; i < text.length; i++) {
-        var span = document.createElement('span');
-        span.textContent = text[i];
-        span.className = 'letter';
-        span.style.display = 'inline-block';
-        if (text[i] === ' ') span.style.minWidth = '0.2em';
-        frag.appendChild(span);
-      }
-      element.appendChild(frag);
+      element.innerHTML = element.textContent.replace(/([^\\x00-\\x80]|\\w)/g, \"<span class='letter'>$&</span>\");
     }
 
     let currentAnimation = null;
@@ -150,35 +140,32 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
 
       const allLetters = [];
       for (let i = 0; i < elements.length; i++) {
-        elements[i].style.opacity = '1';
-        elements[i].style.transform = 'none';
-        wrapLetters(elements[i]);
-        const letters = elements[i].querySelectorAll('.letter');
-        for (let j = 0; j < letters.length; j++) allLetters.push(letters[j]);
+        const el = elements[i];
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+        wrapLetters(el);
+        const letters = el.querySelectorAll('.letter');
+        if (letters.length > 0) {
+          for (let j = 0; j < letters.length; j++) allLetters.push(letters[j]);
+        } else {
+          allLetters.push(el);
+        }
       }
 
-      if (!allLetters.length) {
-        for (let i = 0; i < elements.length; i++) {
-           elements[i].style.opacity = '0';
-           elements[i].style.transform = 'translateY(50px)';
-        }
-        currentAnimation = anime({ targets: Array.from(elements), opacity: [0,1], translateY: [50,0], easing: 'easeOutExpo', duration: 800, delay: anime.stagger(150) });
-        return;
-      }
+      if (!allLetters.length) return;
 
       for (let i = 0; i < allLetters.length; i++) {
         allLetters[i].style.opacity = '0';
-        allLetters[i].style.transform = 'translateY(30px) translateZ(-30px) rotateX(20deg)';
+        allLetters[i].style.transform = 'translateY(20px) scale(0.9)';
       }
 
       currentAnimation = anime({
         targets: allLetters,
         opacity: [0,1],
-        translateY: [30,0],
-        translateZ: [-30,0],
-        rotateX: [20,0],
-        easing: 'easeOutExpo',
-        duration: 900,
+        translateY: [20,0],
+        scale: [0.9,1],
+        easing: 'easeOutCubic',
+        duration: 800,
         delay: anime.stagger(30)
       });
     }
