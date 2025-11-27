@@ -178,13 +178,15 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       for (let i = 0; i < letterNodes.length; i++) {
         letterNodes[i].style.display = 'inline-block';
         letterNodes[i].style.opacity = '0';
-        letterNodes[i].style.transform = 'translateY(30px) scale(0.9)';
+        letterNodes[i].style.transform = 'translateY(30px) translateZ(-40px) rotateX(12deg) scale(0.9)';
       }
 
       currentAnimation = anime({
         targets: letterNodes,
         opacity: [0,1],
         translateY: [30,0],
+        translateZ: [-40,0],
+        rotateX: [12,0],
         scale: [0.9,1],
         easing: 'easeOutCubic',
         duration: 600,
