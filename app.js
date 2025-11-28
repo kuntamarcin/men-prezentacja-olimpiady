@@ -227,40 +227,7 @@ function setBackgroundForSlide(slide) {
 
 // --- Animacje ---
 
-function wrapLetters(element) {
-  if (!element) return;
-  // Jeśli już ma litery, nie rób nic
-  if (element.querySelector('.letter')) return;
-
-  // Rekurencyjnie przechodzimy po drzewie DOM, aby zachować istniejące znaczniki (np. <b>)
-  function wrapNode(node) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      const text = node.nodeValue;
-      if (!text) return;
-      const frag = document.createDocumentFragment();
-      for (const char of text) {
-        if (char === ' ') {
-          // \u2004 (Three-Per-Em Space) + zwykła spacja daje wizualnie ~30% większy odstęp
-          frag.appendChild(document.createTextNode('\u2004 '));
-        } else {
-          const span = document.createElement('span');
-          span.textContent = char;
-          span.className = 'letter';
-          frag.appendChild(span);
-        }
-      }
-      node.parentNode.replaceChild(frag, node);
-    } else if (node.nodeType === Node.ELEMENT_NODE) {
-      // Nie owijamy ponownie liter
-      if (node.classList.contains('letter')) return;
-      const children = Array.from(node.childNodes);
-      children.forEach(wrapNode);
-    }
-  }
-
-  wrapNode(element);
-}
-
+// Prosta animacja całych bloków (bez rozbijania na litery)
 function fadeInSequence(elements) {
   if (state.currentAnimation) {
     state.currentAnimation.pause();
@@ -269,41 +236,20 @@ function fadeInSequence(elements) {
 
   if (!window.anime || !elements.length) return;
 
-  const allLetters = [];
-
+  // Stan początkowy: całe bloki są lekko niżej i ukryte
   elements.forEach(el => {
-    // Reset kontenera - musi być widoczny, by litery mogły być widoczne
-    el.style.opacity = '1';
-    el.style.transform = 'none';
-    
-    wrapLetters(el);
-    
-    const letters = el.querySelectorAll('.letter');
-    if (letters.length > 0) {
-      letters.forEach(l => allLetters.push(l));
-    } else {
-      // Fallback: jeśli brak liter (pusty tekst?), animujemy cały element
-      allLetters.push(el);
-    }
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(40px) scale(0.95)';
   });
 
-  if (!allLetters.length) return;
-
-  // Stan początkowy liter – lekko "z głębi": mniejsze, niżej i niewidoczne
-  allLetters.forEach(l => {
-    l.style.opacity = '0';
-    l.style.transform = 'translateY(16px) scale(0.8)';
-  });
-
-  // Animacja literka po literce – nieco szybsza, z delikatnym scale-in
   state.currentAnimation = anime({
-    targets: allLetters,
+    targets: Array.from(elements),
     opacity: [0, 1],
-    translateY: [16, 0],
-    scale: [0.8, 1],
+    translateY: [40, 0],
+    scale: [0.95, 1],
     easing: 'easeOutCubic',
-    duration: 420,
-    delay: anime.stagger(22), // trochę szybciej niż wcześniej
+    duration: 650,
+    delay: anime.stagger(120),
     complete: () => {
       state.currentAnimation = null;
     }
