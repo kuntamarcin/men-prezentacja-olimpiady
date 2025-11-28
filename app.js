@@ -232,22 +232,32 @@ function wrapLetters(element) {
   // Jeśli już ma litery, nie rób nic
   if (element.querySelector('.letter')) return;
 
-  const text = element.textContent;
-  element.innerHTML = "";
-  
-  // Bezpieczna iteracja po znakach
-  for (const char of text) {
-    // Jeśli spacja - dodaj jako zwykły tekst (nie zniknie, zachowa odstęp)
-    if (char === " ") {
-      element.appendChild(document.createTextNode(" "));
-    } else {
-      // Inne znaki - owiń w span do animacji
-      const span = document.createElement("span");
-      span.textContent = char;
-      span.className = "letter";
-      element.appendChild(span);
+  // Rekurencyjnie przechodzimy po drzewie DOM, aby zachować istniejące znaczniki (np. <b>)
+  function wrapNode(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const text = node.nodeValue;
+      if (!text) return;
+      const frag = document.createDocumentFragment();
+      for (const char of text) {
+        if (char === ' ') {
+          frag.appendChild(document.createTextNode(' '));
+        } else {
+          const span = document.createElement('span');
+          span.textContent = char;
+          span.className = 'letter';
+          frag.appendChild(span);
+        }
+      }
+      node.parentNode.replaceChild(frag, node);
+    } else if (node.nodeType === Node.ELEMENT_NODE) {
+      // Nie owijamy ponownie liter
+      if (node.classList.contains('letter')) return;
+      const children = Array.from(node.childNodes);
+      children.forEach(wrapNode);
     }
   }
+
+  wrapNode(element);
 }
 
 function fadeInSequence(elements) {
