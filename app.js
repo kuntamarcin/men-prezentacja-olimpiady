@@ -236,20 +236,21 @@ function fadeInSequence(elements) {
 
   if (!window.anime || !elements.length) return;
 
-  // Stan początkowy: całe bloki są lekko niżej i trochę mniejsze
+  // Stan początkowy: całe bloki są niżej i trochę mniejsze
   elements.forEach(el => {
     el.style.opacity = '0';
-    el.style.transform = 'translateY(40px) scale(0.9)';
+    el.style.transform = 'translateY(60px) scale(0.9)';
   });
 
+  // Dostojeństwo: dłuższy czas i większy odstęp między kolejnymi blokami
   state.currentAnimation = anime({
     targets: Array.from(elements),
     opacity: [0, 1],
-    translateY: [40, 0],
+    translateY: [60, 0],
     scale: [0.9, 1],
     easing: 'easeOutCubic',
-    duration: 900,          // wolniej
-    delay: anime.stagger(180), // większy odstęp między blokami
+    duration: 1200,              // wolniej
+    delay: anime.stagger(320),   // tytuł -> podtytuł -> laureaci po kolei
     complete: () => {
       state.currentAnimation = null;
     }
