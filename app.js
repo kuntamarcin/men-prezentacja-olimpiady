@@ -227,6 +227,25 @@ function setBackgroundForSlide(slide) {
 
 // --- Animacje ---
 
+function wrapLetters(element) {
+  if (!element) return;
+  // Jeśli już ma litery, nie rób nic
+  if (element.querySelector('.letter')) return;
+
+  const text = element.textContent;
+  element.innerHTML = "";
+  
+  // Bezpieczna iteracja po znakach
+  for (const char of text) {
+    const span = document.createElement("span");
+    span.textContent = char;
+    // Ważne: spacja też jest w spanie z klasą letter, 
+    // a CSS .letter ma white-space: pre, więc odstęp się zachowa.
+    span.className = "letter";
+    element.appendChild(span);
+  }
+}
+
 function fadeInSequence(elements) {
   if (state.currentAnimation) {
     state.currentAnimation.pause();
@@ -235,21 +254,40 @@ function fadeInSequence(elements) {
 
   if (!window.anime || !elements.length) return;
 
-  // Stan początkowy - ukrycie
+  const allLetters = [];
+
   elements.forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(50px) scale(0.9)';
+    // Reset kontenera - musi być widoczny, by litery mogły być widoczne
+    el.style.opacity = '1';
+    el.style.transform = 'none';
+    
+    wrapLetters(el);
+    
+    const letters = el.querySelectorAll('.letter');
+    if (letters.length > 0) {
+      letters.forEach(l => allLetters.push(l));
+    } else {
+      // Fallback: jeśli brak liter (pusty tekst?), animujemy cały element
+      allLetters.push(el);
+    }
   });
 
-  // Animacja wejścia (blokowa) - najbardziej stabilna
+  if (!allLetters.length) return;
+
+  // Stan początkowy liter
+  allLetters.forEach(l => {
+    l.style.opacity = '0';
+    l.style.transform = 'translateY(20px)';
+  });
+
+  // Animacja literka po literce
   state.currentAnimation = anime({
-    targets: Array.from(elements),
+    targets: allLetters,
     opacity: [0, 1],
-    translateY: [50, 0],
-    scale: [0.9, 1],
-    easing: 'easeOutExpo',
-    duration: 800,
-    delay: anime.stagger(150),
+    translateY: [20, 0],
+    easing: 'easeOutCubic',
+    duration: 600,
+    delay: anime.stagger(30), // 30ms odstępu między literami
     complete: () => {
       state.currentAnimation = null;
     }
@@ -273,6 +311,7 @@ function renderCurrentSlide() {
   slideLayer.appendChild(content);
   setBackgroundForSlide(slide);
 
+  // Animujemy wszystko co ma klasę fade-seq
   const animatables = slideLayer.querySelectorAll(".fade-seq");
   fadeInSequence(animatables);
 }
