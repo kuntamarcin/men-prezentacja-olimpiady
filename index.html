@@ -351,14 +351,26 @@
     }
 
     async function fetchSheetData() {
-      const res = await fetch(SHEET_URL);
-      if (!res.ok) {
-        throw new Error("Nie udało się wczytać danych z Google Sheets");
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 sekund timeoutu na dane
+
+      try {
+        const res = await fetch(SHEET_URL, { signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!res.ok) {
+          throw new Error("Nie udało się wczytać danych z Google Sheets (status " + res.status + ")");
+        }
+        const text = await res.text();
+        // Wyciągamy JSON z wrappera Google Visualization API
+        const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
+        const data = JSON.parse(jsonStr);
+        return data.table;
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          throw new Error("Przekroczono limit czasu pobierania danych (8s).");
+        }
+        throw err;
       }
-      const text = await res.text();
-      const jsonStr = text.substring(text.indexOf("{"), text.lastIndexOf("}") + 1);
-      const data = JSON.parse(jsonStr);
-      return data.table;
     }
 
     function parseContestsFromTable(table) {
@@ -770,10 +782,26 @@
             resolve();
           } else {
             video.addEventListener('canplaythrough', resolve, { once: true });
-            setTimeout(resolve, 5000);
+            // Zmniejszamy timeout dla wideo do 3s, żeby szybciej odblokować UI
+            setTimeout(() => {
+               console.warn("Video timeout for:", video.id);
+               resolve();
+            }, 3000);
           }
         });
       }
+
+      // Global safety net: wymuś start po 10 sekundach max, cokolwiek się dzieje
+      const safetyNet = setTimeout(() => {
+        const loading = document.getElementById("loading-overlay");
+        const start = document.getElementById("start-overlay");
+        if (!loading.classList.contains("hidden")) {
+           console.warn("Safety net triggered: forcing app start.");
+           loading.classList.add("hidden");
+           start.classList.add("visible");
+           showError("Ładowanie trwało zbyt długo. Aplikacja mogła nie załadować się w pełni.");
+        }
+      }, 10000);
 
       try {
         const dataPromise = (async () => {
@@ -783,8 +811,11 @@
         })();
 
         const videoPromise = Promise.all([videoReady(video1), videoReady(video2)]);
-
+        
         await Promise.all([dataPromise, videoPromise]);
+        clearTimeout(safetyNet); // wszystko się udało, anuluj safety net
+
+        video1.classList.add("visible");
 
         video1.classList.add("visible");
         video2.classList.remove("visible");
