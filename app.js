@@ -288,20 +288,21 @@ function fadeInSequence(elements) {
 
   if (!allLetters.length) return;
 
-  // Stan początkowy liter
+  // Stan początkowy liter – lekko "z głębi": mniejsze, niżej i niewidoczne
   allLetters.forEach(l => {
     l.style.opacity = '0';
-    l.style.transform = 'translateY(20px)';
+    l.style.transform = 'translateY(16px) scale(0.8)';
   });
 
-  // Animacja literka po literce
+  // Animacja literka po literce – nieco szybsza, z delikatnym scale-in
   state.currentAnimation = anime({
     targets: allLetters,
     opacity: [0, 1],
-    translateY: [20, 0],
+    translateY: [16, 0],
+    scale: [0.8, 1],
     easing: 'easeOutCubic',
-    duration: 600,
-    delay: anime.stagger(30), // 30ms odstępu między literami
+    duration: 420,
+    delay: anime.stagger(22), // trochę szybciej niż wcześniej
     complete: () => {
       state.currentAnimation = null;
     }
