@@ -34,7 +34,6 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     #start-button:hover { transform: translateY(-1px); box-shadow: 0 8px 18px rgba(0,0,0,0.5); }
     #start-button:active { transform: translateY(1px); box-shadow: 0 3px 10px rgba(0,0,0,0.5); }
     .fade-seq { opacity: 0; transform: translateY(10px); }
-    .letter { display: inline-block; line-height: 1em; }
     #error-message { position: absolute; inset: 0; z-index: 3; display: none; align-items: center; justify-content: center; padding: 2rem; text-align: center; background: rgba(0,0,0,0.8); color: #fff; font-size: 1.1rem; }
     #error-message.visible { display: flex; }
   `;
@@ -127,59 +126,16 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
       return container;
     }
 
-    function wrapLetters(element) {
-      if (!element) return;
-      if (element.querySelector('.letter')) return;
-      const text = element.textContent;
-      element.innerHTML = '';
-      for (var i = 0; i < text.length; i++) {
-        var char = text[i];
-        if (char === ' ') {
-          element.appendChild(document.createTextNode(' '));
-        } else {
-          var span = document.createElement('span');
-          span.textContent = char;
-          span.className = 'letter';
-          element.appendChild(span);
-        }
-      }
-    }
-
     let currentAnimation = null;
     function fadeInSequence(elements) {
       if (currentAnimation) { currentAnimation.pause(); currentAnimation = null; }
       if (!window.anime || !elements.length) return;
 
-      const allLetters = [];
       for (let i = 0; i < elements.length; i++) {
-        const el = elements[i];
-        el.style.opacity = '1';
-        el.style.transform = 'none';
-        wrapLetters(el);
-        const letters = el.querySelectorAll('.letter');
-        if (letters.length > 0) {
-          for (let j = 0; j < letters.length; j++) allLetters.push(letters[j]);
-        } else {
-          allLetters.push(el);
-        }
+        elements[i].style.opacity = '0';
+        elements[i].style.transform = 'translateY(50px) scale(0.9)';
       }
-
-      if (!allLetters.length) return;
-
-      for (let i = 0; i < allLetters.length; i++) {
-        allLetters[i].style.opacity = '0';
-        allLetters[i].style.transform = 'translateY(20px)';
-        allLetters[i].style.display = 'inline-block';
-      }
-
-      currentAnimation = anime({
-        targets: allLetters,
-        opacity: [0,1],
-        translateY: [20,0],
-        easing: 'easeOutCubic',
-        duration: 400,
-        delay: anime.stagger(30)
-      });
+      currentAnimation = anime({ targets: Array.from(elements), opacity: [0,1], translateY: [50,0], scale: [0.9,1], easing: 'easeOutExpo', duration: 800, delay: anime.stagger(150), complete: function() { currentAnimation = null; } });
     }
 
     function renderCurrentSlide() {

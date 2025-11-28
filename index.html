@@ -318,10 +318,6 @@
     #error-message.visible {
       display: flex;
     }
-    .letter {
-      display: inline-block;
-      line-height: 1em;
-    }
   </style>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" defer></script>
@@ -520,27 +516,7 @@
       return container;
     }
 
-    function wrapLetters(element) {
-      if (!element) return;
-      if (element.querySelector('.letter')) return;
-      
-      const text = element.textContent;
-      element.innerHTML = "";
-      
-      // Prosta iteracja znak po znaku - pancerne rozwiązanie
-      for (const char of text) {
-        if (char === " ") {
-          // Spacja jako zwykły tekst (zachowuje odstęp)
-          element.appendChild(document.createTextNode(" "));
-        } else {
-          // Znak jako span animowany
-          const span = document.createElement("span");
-          span.textContent = char;
-          span.className = "letter";
-          element.appendChild(span);
-        }
-      }
-    }
+    let currentAnimation = null;
 
     function fadeInSequence(elements, options = {}) {
       if (currentAnimation) {
@@ -550,42 +526,24 @@
 
       if (!window.anime || !elements.length) return;
 
-      const allLetters = [];
-
       elements.forEach(el => {
-        // Reset stanu kontenera
-        el.style.opacity = '1';
-        el.style.transform = 'none';
-        
-        wrapLetters(el);
-        
-        // Zbierz litery
-        const letters = el.querySelectorAll('.letter');
-        if (letters.length > 0) {
-           letters.forEach(l => allLetters.push(l));
-        } else {
-           // Jeśli brak liter (np. same spacje?), to potraktujmy cały element jako obiekt animacji
-           allLetters.push(el);
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(50px) scale(0.9)';
+      });
+
+      currentAnimation = anime({
+        targets: Array.from(elements),
+        opacity: [0, 1],
+        translateY: [50, 0],
+        scale: [0.9, 1],
+        easing: 'easeOutExpo',
+        duration: 800,
+        delay: anime.stagger(150),
+        complete: () => {
+          currentAnimation = null;
         }
       });
-
-      if (!allLetters.length) return;
-
-      // Stan początkowy
-      allLetters.forEach(l => {
-        l.style.opacity = '0';
-        l.style.transform = 'translateY(20px)';
-        l.style.display = 'inline-block'; // Ważne dla transformacji
-      });
-
-      // Animacja
-      currentAnimation = anime({
-        targets: allLetters,
-        opacity: [0, 1],
-        translateY: [20, 0],
-        easing: 'easeOutCubic',
-        duration: 400,
-        delay: anime.stagger(30)
+    }
       });
     }
 
