@@ -130,7 +130,19 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
     function wrapLetters(element) {
       if (!element) return;
       if (element.querySelector('.letter')) return;
-      element.innerHTML = element.textContent.replace(/([^\\x00-\\x80]|\\w)/g, \"<span class='letter'>$&</span>\");
+      const text = element.textContent;
+      element.innerHTML = '';
+      for (var i = 0; i < text.length; i++) {
+        var char = text[i];
+        if (char === ' ') {
+          element.appendChild(document.createTextNode(' '));
+        } else {
+          var span = document.createElement('span');
+          span.textContent = char;
+          span.className = 'letter';
+          element.appendChild(span);
+        }
+      }
     }
 
     let currentAnimation = null;
@@ -156,16 +168,16 @@ window.generateOfflineHtml = function(contestsData, animeJsCode) {
 
       for (let i = 0; i < allLetters.length; i++) {
         allLetters[i].style.opacity = '0';
-        allLetters[i].style.transform = 'translateY(20px) scale(0.9)';
+        allLetters[i].style.transform = 'translateY(20px)';
+        allLetters[i].style.display = 'inline-block';
       }
 
       currentAnimation = anime({
         targets: allLetters,
         opacity: [0,1],
         translateY: [20,0],
-        scale: [0.9,1],
         easing: 'easeOutCubic',
-        duration: 800,
+        duration: 400,
         delay: anime.stagger(30)
       });
     }

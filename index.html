@@ -522,12 +522,24 @@
 
     function wrapLetters(element) {
       if (!element) return;
-      // Jeśli już ma litery, nie rób nic
       if (element.querySelector('.letter')) return;
       
-      // Owijamy każdy znak niebędący białym znakiem w span.letter
-      // Spacje pozostają naturalne
-      element.innerHTML = element.textContent.replace(/([^\x00-\x80]|\w)/g, "<span class='letter'>$&</span>");
+      const text = element.textContent;
+      element.innerHTML = "";
+      
+      // Prosta iteracja znak po znaku - pancerne rozwiązanie
+      for (const char of text) {
+        if (char === " ") {
+          // Spacja jako zwykły tekst (zachowuje odstęp)
+          element.appendChild(document.createTextNode(" "));
+        } else {
+          // Znak jako span animowany
+          const span = document.createElement("span");
+          span.textContent = char;
+          span.className = "letter";
+          element.appendChild(span);
+        }
+      }
     }
 
     function fadeInSequence(elements, options = {}) {
@@ -559,21 +571,21 @@
 
       if (!allLetters.length) return;
 
-      // Ustaw stan początkowy
+      // Stan początkowy
       allLetters.forEach(l => {
         l.style.opacity = '0';
-        l.style.transform = 'translateY(20px) scale(0.9)';
+        l.style.transform = 'translateY(20px)';
+        l.style.display = 'inline-block'; // Ważne dla transformacji
       });
 
-      // Uruchom animację
+      // Animacja
       currentAnimation = anime({
         targets: allLetters,
         opacity: [0, 1],
         translateY: [20, 0],
-        scale: [0.9, 1],
         easing: 'easeOutCubic',
-        duration: 800,
-        delay: anime.stagger(30) // opóźnienie między kolejnymi literami
+        duration: 400,
+        delay: anime.stagger(30)
       });
     }
 
