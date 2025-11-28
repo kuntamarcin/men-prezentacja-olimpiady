@@ -240,7 +240,8 @@ function wrapLetters(element) {
       const frag = document.createDocumentFragment();
       for (const char of text) {
         if (char === ' ') {
-          frag.appendChild(document.createTextNode(' '));
+          // \u2004 (Three-Per-Em Space) + zwykła spacja daje wizualnie ~30% większy odstęp
+          frag.appendChild(document.createTextNode('\u2004 '));
         } else {
           const span = document.createElement('span');
           span.textContent = char;
