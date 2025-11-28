@@ -294,7 +294,6 @@ body {
 .letter {
   display: inline-block;
   line-height: 1em;
-  white-space: pre;
 }
 
 #error-message {

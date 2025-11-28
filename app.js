@@ -237,12 +237,16 @@ function wrapLetters(element) {
   
   // Bezpieczna iteracja po znakach
   for (const char of text) {
-    const span = document.createElement("span");
-    span.textContent = char;
-    // Ważne: spacja też jest w spanie z klasą letter, 
-    // a CSS .letter ma white-space: pre, więc odstęp się zachowa.
-    span.className = "letter";
-    element.appendChild(span);
+    // Jeśli spacja - dodaj jako zwykły tekst (nie zniknie, zachowa odstęp)
+    if (char === " ") {
+      element.appendChild(document.createTextNode(" "));
+    } else {
+      // Inne znaki - owiń w span do animacji
+      const span = document.createElement("span");
+      span.textContent = char;
+      span.className = "letter";
+      element.appendChild(span);
+    }
   }
 }
 
