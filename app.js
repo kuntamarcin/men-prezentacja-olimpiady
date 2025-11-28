@@ -236,20 +236,20 @@ function fadeInSequence(elements) {
 
   if (!window.anime || !elements.length) return;
 
-  // Stan początkowy: całe bloki są lekko niżej i ukryte
+  // Stan początkowy: całe bloki są lekko niżej i trochę mniejsze
   elements.forEach(el => {
     el.style.opacity = '0';
-    el.style.transform = 'translateY(40px) scale(0.95)';
+    el.style.transform = 'translateY(40px) scale(0.9)';
   });
 
   state.currentAnimation = anime({
     targets: Array.from(elements),
     opacity: [0, 1],
     translateY: [40, 0],
-    scale: [0.95, 1],
+    scale: [0.9, 1],
     easing: 'easeOutCubic',
-    duration: 650,
-    delay: anime.stagger(120),
+    duration: 900,          // wolniej
+    delay: anime.stagger(180), // większy odstęp między blokami
     complete: () => {
       state.currentAnimation = null;
     }
