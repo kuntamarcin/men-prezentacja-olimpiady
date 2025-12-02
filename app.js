@@ -169,17 +169,16 @@ function fitSlideContentToSafeArea() {
   // Reset ewentualnego poprzedniego skalowania
   content.style.transform = "";
 
-  const layerRect = slideLayer.getBoundingClientRect();
-  const contentRect = content.getBoundingClientRect();
+  // Wysokość obszaru roboczego (bezpieczeństwa)
+  const layerHeight = slideLayer.clientHeight || slideLayer.getBoundingClientRect().height;
+  const verticalMargin = layerHeight * 0.05; // ok. 5% wysokości u góry i dołu
+  const safeHeight = layerHeight - verticalMargin * 2;
 
-  // "Safe area" – zostawiamy niewielkie marginesy od krawędzi
-  const verticalMargin = layerRect.height * 0.04; // ok. 4% wysokości
-  const safeHeight = layerRect.height - verticalMargin * 2;
+  // Naturalna wysokość treści (nieograniczona max-height)
+  const contentHeight = content.scrollHeight;
+  if (!contentHeight || contentHeight <= 0) return;
 
-  const currentHeight = contentRect.height;
-  if (!currentHeight || currentHeight <= 0) return;
-
-  const scale = safeHeight / currentHeight;
+  const scale = safeHeight / contentHeight;
 
   // Skalujemy tylko w dół; nie powiększamy ponad 100%
   if (scale < 1) {
