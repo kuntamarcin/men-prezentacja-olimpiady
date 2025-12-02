@@ -107,6 +107,12 @@ body {
   padding-top: 0.1em;
 }
 
+/* Slajdy tytułowe bez laureatów – cały tekst na niebiesko */
+.slide-content--blue-title .slide-title,
+.slide-content--blue-title .slide-subtitle {
+  color: #0679ca;
+}
+
 .winners-header {
   font-weight: 700;
   font-size: min(4vh, 2.88vw);

@@ -147,8 +147,15 @@ function parseContestsFromTable(table) {
 function buildSlidesFromContests(contests) {
   const slides = [];
   for (const contest of contests) {
-    slides.push({ type: "title", contest });
-    slides.push({ type: "winners", contest });
+    // Jeśli w danym konkursie nie ma żadnych laureatów (wiersz w bazie ma
+    // wypełnioną tylko "nazwa_konkursu"), traktujemy go jako samodzielny
+    // slajd tytułowy i NIE pokazujemy po nim slajdu z laureatami.
+    if (!contest.winners || contest.winners.length === 0) {
+      slides.push({ type: "titleOnly", contest });
+    } else {
+      slides.push({ type: "title", contest });
+      slides.push({ type: "winners", contest });
+    }
   }
   return slides;
 }
@@ -187,9 +194,9 @@ function fitSlideContentToSafeArea() {
   }
 }
 
-function createTitleSlideContent(contest) {
+function createTitleSlideContent(contest, { blue = false } = {}) {
   const container = document.createElement("div");
-  container.className = "slide-content";
+  container.className = "slide-content" + (blue ? " slide-content--blue-title" : "");
 
   const titleEl = document.createElement("div");
   titleEl.className = "slide-title fade-seq";
@@ -248,7 +255,7 @@ function setBackgroundForSlide(slide) {
   
   if (!titleVideo || !winnersVideo) return;
 
-  if (slide.type === "title") {
+  if (slide.type === "title" || slide.type === "titleOnly") {
     titleVideo.classList.add("visible");
     winnersVideo.classList.remove("visible");
   } else {
@@ -297,8 +304,9 @@ function renderCurrentSlide() {
   slideLayer.innerHTML = "";
 
   let content;
-  if (slide.type === "title") {
-    content = createTitleSlideContent(slide.contest);
+  if (slide.type === "title" || slide.type === "titleOnly") {
+    const blue = slide.type === "titleOnly";
+    content = createTitleSlideContent(slide.contest, { blue });
   } else {
     content = createWinnersSlideContent(slide.contest);
   }
