@@ -155,6 +155,39 @@ function buildSlidesFromContests(contests) {
 
 // --- Renderowanie Slajdów ---
 
+// Dopasowanie całej zawartości slajdu do bezpiecznego kadru
+// Jeśli treści (np. bardzo długa lista laureatów) jest zbyt dużo,
+// cała zawartość jest proporcjonalnie skalowana w dół tak, aby
+// zmieściła się w "safe area" wyznaczonej przez #slide-layer.
+function fitSlideContentToSafeArea() {
+  const slideLayer = document.getElementById("slide-layer");
+  if (!slideLayer) return;
+
+  const content = slideLayer.querySelector(".slide-content");
+  if (!content) return;
+
+  // Reset ewentualnego poprzedniego skalowania
+  content.style.transform = "";
+
+  const layerRect = slideLayer.getBoundingClientRect();
+  const contentRect = content.getBoundingClientRect();
+
+  // "Safe area" – zostawiamy niewielkie marginesy od krawędzi
+  const verticalMargin = layerRect.height * 0.04; // ok. 4% wysokości
+  const safeHeight = layerRect.height - verticalMargin * 2;
+
+  const currentHeight = contentRect.height;
+  if (!currentHeight || currentHeight <= 0) return;
+
+  const scale = safeHeight / currentHeight;
+
+  // Skalujemy tylko w dół; nie powiększamy ponad 100%
+  if (scale < 1) {
+    content.style.transformOrigin = "center center";
+    content.style.transform = `scale(${scale})`;
+  }
+}
+
 function createTitleSlideContent(contest) {
   const container = document.createElement("div");
   container.className = "slide-content";
@@ -273,6 +306,9 @@ function renderCurrentSlide() {
 
   slideLayer.appendChild(content);
   setBackgroundForSlide(slide);
+
+  // Dopasowanie zawartości do bezpiecznego kadru (szczególnie przy wielu laureatach)
+  fitSlideContentToSafeArea();
 
   // Animujemy wszystko co ma klasę fade-seq
   const animatables = slideLayer.querySelectorAll(".fade-seq");
@@ -435,7 +471,8 @@ async function generateOfflineZip() {
     ]);
 
     // 3. Zbuduj HTML offline
-    // Zamiast wklejać kod JS jako string, używamy pobranego appJs
+    // Używamy pobranego appJs jako osobnego pliku, żeby uniknąć problemu z </script>
+    // wewnątrz inline'owego skryptu.
     const offlineHtml = `<!DOCTYPE html>
 <html lang="pl">
 <head>
@@ -460,17 +497,19 @@ async function generateOfflineZip() {
     <div id="error-message"></div>
   </div>
 
-  <script>${animeLib}</script>
+  <script src="anime.min.js"></script>
   <script>
     window.OFFLINE_CONTESTS = ${JSON.stringify(contestsData)};
-    ${appJs}
   </script>
+  <script src="app.js"></script>
 </body>
 </html>`;
 
     // 4. Pakowanie ZIP
     const zip = new JSZip();
     zip.file("index.html", offlineHtml);
+    zip.file("anime.min.js", animeLib);
+    zip.file("app.js", appJs);
     zip.file("bg-1.mp4", bg1);
     zip.file("bg-2.mp4", bg2);
     zip.folder("fonts").file("Uni Sans Heavy.otf", font);
