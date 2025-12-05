@@ -3,7 +3,8 @@
 */
 
 // --- Konfiguracja i Stan Globalny ---
-const SHEET_ID = "1_4ZEm_I27_I0c6Gnlr2Ffs3lUg8alIcEwrHCzwXwysk";
+// ID arkusza z bazą laureatów (Gala Olimpijczyków 2025)
+const SHEET_ID = "1WfKruLD8xTsUVhsjvnmtrJHjttR9jJF_Qopizn9u6aM";
 const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
 const POLLING_INTERVAL = 10000;
 
@@ -71,6 +72,25 @@ async function fetchSheetData() {
   }
 }
 
+function normalizeMedal(raw) {
+  if (!raw) return null;
+  const val = String(raw).trim().toLowerCase();
+  if (!val || val === "brak") return null;
+  if (val.startsWith("zł") || val.startsWith("zl")) return "złoty";
+  if (val.startsWith("srebr")) return "srebrny";
+  if (val.startsWith("brą") || val.startsWith("bra")) return "brązowy";
+  if (val.startsWith("wyr")) return "wyróżnienie";
+  return null;
+}
+
+function medalSortKey(medal) {
+  if (medal === "złoty") return 1;
+  if (medal === "srebrny") return 2;
+  if (medal === "brązowy") return 3;
+  if (medal === "wyróżnienie") return 4;
+  return 5;
+}
+
 function parseContestsFromTable(table) {
   if (window.OFFLINE_CONTESTS) return window.OFFLINE_CONTESTS;
   if (!table) return [];
@@ -82,81 +102,159 @@ function parseContestsFromTable(table) {
     return cols.findIndex(c => (c.label || "").trim().toLowerCase() === label.toLowerCase());
   }
 
-  let idxName = findCol("nazwa_konkursu");
-  let idxOrg = findCol("organizator");
-  let idxWinnerName = findCol("imiona_nazwiska_laureata");
-  let idxSchool = findCol("nazwa_szkoly");
-  let idxRegion = findCol("wojewodztwo");
+  let idxKind = findCol("rodzaj olimpiady");
+  let idxName = findCol("nazwa olimpiady");
+  let idxStudent = findCol("reprezentacja");
+  let idxMedal = findCol("medal");
+  let idxSchool = findCol("nazwa szkoły");
 
   // Fallback: szukanie w pierwszym wierszu, jeśli nagłówki nie są zdefiniowane w metadanych
   let dataRows = rows;
-  if (idxName === -1 && rows.length > 0) {
+  if (idxKind === -1 && rows.length > 0) {
     const firstRow = rows[0].c || [];
     const headers = firstRow.map(cell => (cell && cell.v != null ? String(cell.v).trim().toLowerCase() : ""));
-    
-    idxName = headers.indexOf("nazwa_konkursu");
-    idxOrg = headers.indexOf("organizator");
-    idxWinnerName = headers.indexOf("imiona_nazwiska_laureata");
-    idxSchool = headers.indexOf("nazwa_szkoly");
-    idxRegion = headers.indexOf("wojewodztwo");
-    
+
+    idxKind = headers.indexOf("rodzaj olimpiady");
+    idxName = headers.indexOf("nazwa olimpiady");
+    idxStudent = headers.indexOf("reprezentacja");
+    idxMedal = headers.indexOf("medal");
+    idxSchool = headers.indexOf("nazwa szkoły");
+
     dataRows = rows.slice(1);
   }
 
-  if (idxName === -1) {
-    console.warn("Nie znaleziono kolumny 'nazwa_konkursu'.");
+  if (idxKind === -1 || idxName === -1) {
+    console.warn("Nie znaleziono kolumn 'rodzaj olimpiady' lub 'nazwa olimpiady'.");
     return [];
   }
 
-  const result = [];
-  let currentContest = null;
+  const kindMap = new Map();
+  let lastKind = "";
+  let lastName = "";
 
   for (const row of dataRows) {
     const c = row.c || [];
     const getVal = (i) => (i !== -1 && c[i] && c[i].v != null) ? String(c[i].v).trim() : "";
 
-    const nameVal = getVal(idxName);
-    const orgVal = getVal(idxOrg);
-    const winnerNameVal = getVal(idxWinnerName);
+    const kindValRaw = getVal(idxKind);
+    const nameValRaw = getVal(idxName);
+    const studentName = getVal(idxStudent);
+    const medalRaw = getVal(idxMedal);
     const schoolVal = getVal(idxSchool);
-    const regionVal = getVal(idxRegion);
 
-    if (!nameVal && !orgVal && !winnerNameVal) continue;
-
-    if (nameVal) {
-      if (currentContest) result.push(currentContest);
-      currentContest = {
-        title: nameVal,
-        organizer: orgVal,
-        winners: []
-      };
+    if (!kindValRaw && !nameValRaw && !studentName && !schoolVal && !medalRaw) {
+      continue;
     }
 
-    if (currentContest && winnerNameVal) {
-      currentContest.winners.push({
-        name: winnerNameVal,
+    if (kindValRaw) lastKind = kindValRaw;
+    if (nameValRaw) lastName = nameValRaw;
+
+    const kindTitle = lastKind;
+    const olympiadName = lastName;
+
+    if (!kindTitle || !olympiadName) {
+      continue;
+    }
+
+    let kindGroup = kindMap.get(kindTitle);
+    if (!kindGroup) {
+      kindGroup = {
+        kindTitle,
+        olympiads: new Map()
+      };
+      kindMap.set(kindTitle, kindGroup);
+    }
+
+    let olympiad = kindGroup.olympiads.get(olympiadName);
+    if (!olympiad) {
+      olympiad = {
+        name: olympiadName,
+        participants: []
+      };
+      kindGroup.olympiads.set(olympiadName, olympiad);
+    }
+
+    if (studentName || schoolVal || medalRaw) {
+      const medal = normalizeMedal(medalRaw);
+      olympiad.participants.push({
+        name: studentName,
         school: schoolVal,
-        region: regionVal
+        medal,
+        medalSort: medalSortKey(medal)
       });
     }
   }
-  if (currentContest) result.push(currentContest);
+
+  const result = [];
+  for (const [, kindGroup] of kindMap) {
+    const olympiads = [];
+    for (const [, olympiad] of kindGroup.olympiads) {
+      olympiads.push(olympiad);
+    }
+    result.push({
+      kindTitle: kindGroup.kindTitle,
+      olympiads
+    });
+  }
   return result;
 }
 
-function buildSlidesFromContests(contests) {
+function buildSlidesFromContests(contestsByKind) {
   const slides = [];
-  for (const contest of contests) {
-    // Jeśli w danym konkursie nie ma żadnych laureatów (wiersz w bazie ma
-    // wypełnioną tylko "nazwa_konkursu"), traktujemy go jako samodzielny
-    // slajd tytułowy i NIE pokazujemy po nim slajdu z laureatami.
-    if (!contest.winners || contest.winners.length === 0) {
-      slides.push({ type: "titleOnly", contest });
-    } else {
-      slides.push({ type: "title", contest });
-      slides.push({ type: "winners", contest });
-    }
-  }
+
+  contestsByKind.forEach(kindGroup => {
+    // Slajd z rodzajem olimpiady
+    slides.push({
+      type: "kind",
+      kindTitle: kindGroup.kindTitle
+    });
+
+    kindGroup.olympiads.forEach(olympiad => {
+      // Slajd z nazwą konkretnej olimpiady
+      slides.push({
+        type: "olympiadTitle",
+        kindTitle: kindGroup.kindTitle,
+        olympiadName: olympiad.name
+      });
+
+      // Slajd z podsumowaniem medali
+      const medalCounts = {
+        złoty: 0,
+        srebrny: 0,
+        brązowy: 0,
+        wyróżnienie: 0
+      };
+
+      olympiad.participants.forEach(p => {
+        if (p.medal === "złoty") medalCounts.złoty++;
+        else if (p.medal === "srebrny") medalCounts.srebrny++;
+        else if (p.medal === "brązowy") medalCounts.brązowy++;
+        else if (p.medal === "wyróżnienie") medalCounts.wyróżnienie++;
+      });
+
+      slides.push({
+        type: "medals",
+        kindTitle: kindGroup.kindTitle,
+        olympiadName: olympiad.name,
+        medalCounts
+      });
+
+      // Slajd z reprezentacją – wszyscy uczniowie, posortowani wg medali
+      const participantsSorted = [...olympiad.participants].sort((a, b) => {
+        if (a.medalSort !== b.medalSort) return a.medalSort - b.medalSort;
+        if (a.name && b.name) return a.name.localeCompare(b.name, "pl");
+        return 0;
+      });
+
+      slides.push({
+        type: "representation",
+        kindTitle: kindGroup.kindTitle,
+        olympiadName: olympiad.name,
+        participants: participantsSorted
+      });
+    });
+  });
+
   return slides;
 }
 
@@ -194,73 +292,191 @@ function fitSlideContentToSafeArea() {
   }
 }
 
-function createTitleSlideContent(contest, { blue = false } = {}) {
-  const container = document.createElement("div");
-  container.className = "slide-content" + (blue ? " slide-content--blue-title" : "");
+const KIND_VIDEO_FILES = {
+  "Olimpiada Języka Łacińskiego i Kultury Antycznej": "olimpiada_jezyka_lacinskiego_i_kultury_antycznej.mp4",
+  "Olimpiada Fizyczna": "olimpiada_fizyczna.mp4",
+  "Olimpiada Biologiczna": "olimpiada_biologiczna.mp4",
+  "Olimpiada Informatyczna": "olimpiada_informatyczna.mp4",
+  "Olimpiada Informatyczna Juniorów": "olimpiada_informatyczna_juniorow.mp4",
+  "Olimpiada Chemiczna": "olimpiada_chemiczna.mp4",
+  "Olimpiada Filozoficzna": "olimpiada_filozoficzna.mp4",
+  "Olimpiada Geograficzna": "olimpiada_geograficzna.mp4",
+  "Olimpiada Lingwistyki Matematycznej": "olimpiada_lingwistyki_matematycznej.mp4",
+  "Olimpiada Astronomiczna": "olimpiada_astronomiczna.mp4",
+  "Olimpiada Wiedzy Ekonomicznej": "olimpiada_wiedzy_ekonomicznej.mp4"
+};
 
-  const titleEl = document.createElement("div");
-  titleEl.className = "slide-title fade-seq";
-  titleEl.innerHTML = fixOrphans(contest.title || "(bez tytułu)");
+const DEFAULT_BG_VIDEO = "bg_ogolne.mp4";
 
-  const subtitleEl = document.createElement("div");
-  subtitleEl.className = "slide-subtitle fade-seq";
-  subtitleEl.innerHTML = fixOrphans(contest.organizer || "");
-
-  container.appendChild(titleEl);
-  container.appendChild(subtitleEl);
-  return container;
+function getVideoForKind(kindTitle) {
+  return KIND_VIDEO_FILES[kindTitle] || DEFAULT_BG_VIDEO;
 }
 
-function createWinnersSlideContent(contest) {
+function createKindSlideContent(kindTitle) {
   const container = document.createElement("div");
   container.className = "slide-content";
 
-  const winnersCount = contest.winners.length;
-  const headerText = winnersCount === 1 ? "Zwycięzca" : "Zwycięzcy";
+  const titleEl = document.createElement("div");
+  titleEl.className = "slide-title fade-seq";
+  titleEl.innerHTML = fixOrphans(kindTitle || "(bez rodzaju)");
+
+  container.appendChild(titleEl);
+  return container;
+}
+
+function createOlympiadTitleSlideContent(kindTitle, olympiadName) {
+  const container = document.createElement("div");
+  container.className = "slide-content";
+
+  const subtitleEl = document.createElement("div");
+  subtitleEl.className = "slide-subtitle fade-seq";
+  subtitleEl.innerHTML = fixOrphans(kindTitle || "");
+
+  const titleEl = document.createElement("div");
+  titleEl.className = "slide-title fade-seq";
+  titleEl.innerHTML = fixOrphans(olympiadName || "(bez nazwy)");
+
+  container.appendChild(subtitleEl);
+  container.appendChild(titleEl);
+  return container;
+}
+
+function createMedalsSlideContent(slide) {
+  const container = document.createElement("div");
+  container.className = "slide-content";
 
   const headerEl = document.createElement("div");
   headerEl.className = "winners-header fade-seq";
-  headerEl.textContent = headerText;
+  headerEl.textContent = "Nagrody";
 
-  const winnersListEl = document.createElement("div");
-  winnersListEl.className = "winners-list";
+  const listEl = document.createElement("div");
+  listEl.className = "winners-list";
 
-  contest.winners.forEach((w) => {
+  const parts = [];
+
+  if (slide.medalCounts.złoty > 0) {
+    parts.push({ label: "złote", count: slide.medalCounts.złoty });
+  }
+  if (slide.medalCounts.srebrny > 0) {
+    parts.push({ label: "srebrne", count: slide.medalCounts.srebrny });
+  }
+  if (slide.medalCounts.brązowy > 0) {
+    parts.push({ label: "brązowe", count: slide.medalCounts.brązowy });
+  }
+  if (slide.medalCounts.wyróżnienie > 0) {
+    parts.push({ label: "wyróżnienia", count: slide.medalCounts.wyróżnienie });
+  }
+
+  parts.forEach(p => {
     const item = document.createElement("div");
     item.className = "winner fade-seq";
 
     const nameEl = document.createElement("div");
     nameEl.className = "winner-name";
-    nameEl.innerHTML = fixOrphans(w.name);
-
-    const detailsEl = document.createElement("div");
-    detailsEl.className = "winner-details";
-    const regionText = w.region ? `woj.\u00A0${w.region}` : "";
-    const detailsParts = [w.school, regionText].filter(Boolean);
-    detailsEl.innerHTML = fixOrphans(detailsParts.join(" • "));
+    nameEl.textContent = `${p.label}: ${p.count}`;
 
     item.appendChild(nameEl);
-    item.appendChild(detailsEl);
-    winnersListEl.appendChild(item);
+    listEl.appendChild(item);
   });
 
   container.appendChild(headerEl);
-  container.appendChild(winnersListEl);
+  container.appendChild(listEl);
+  return container;
+}
+
+function createRepresentationSlideContent(slide) {
+  const container = document.createElement("div");
+  container.className = "slide-content";
+
+  const headerEl = document.createElement("div");
+  headerEl.className = "winners-header fade-seq";
+  headerEl.textContent = slide.olympiadName || "Reprezentacja";
+
+  const listEl = document.createElement("div");
+  listEl.className = "winners-list";
+
+  // Grupujemy uczestników po szkole tak, aby nazwiska z tej samej szkoły
+  // były pod sobą, a nazwa szkoły pojawiała się tylko raz pod grupą.
+  const groupsMap = new Map();
+
+  slide.participants.forEach(p => {
+    const schoolKey = p.school || "";
+    if (!groupsMap.has(schoolKey)) {
+      groupsMap.set(schoolKey, {
+        school: schoolKey,
+        participants: [],
+        minMedalSort: p.medalSort != null ? p.medalSort : medalSortKey(null)
+      });
+    }
+    const group = groupsMap.get(schoolKey);
+    group.participants.push(p);
+    const sortVal = p.medalSort != null ? p.medalSort : medalSortKey(null);
+    if (sortVal < group.minMedalSort) group.minMedalSort = sortVal;
+  });
+
+  const groups = Array.from(groupsMap.values());
+
+  // Szkoły w kolejności wg najlepszego medalu, potem alfabetycznie po nazwie szkoły
+  groups.sort((a, b) => {
+    if (a.minMedalSort !== b.minMedalSort) return a.minMedalSort - b.minMedalSort;
+    return (a.school || "").localeCompare(b.school || "", "pl");
+  });
+
+  groups.forEach(group => {
+    const item = document.createElement("div");
+    item.className = "winner fade-seq";
+
+    // Najpierw wszystkie nazwiska z tej szkoły, jedno pod drugim
+    group.participants.forEach(p => {
+      const nameEl = document.createElement("div");
+      nameEl.className = "winner-name";
+
+      let prefix = "";
+      if (p.medal === "złoty") prefix = "[złoty] ";
+      else if (p.medal === "srebrny") prefix = "[srebrny] ";
+      else if (p.medal === "brązowy") prefix = "[brązowy] ";
+      else if (p.medal === "wyróżnienie") prefix = "[wyróżnienie] ";
+
+      nameEl.innerHTML = fixOrphans(prefix + (p.name || ""));
+      item.appendChild(nameEl);
+    });
+
+    // Na końcu jedna linia z nazwą szkoły (jeśli jest)
+    if (group.school) {
+      const detailsEl = document.createElement("div");
+      detailsEl.className = "winner-details";
+      detailsEl.innerHTML = fixOrphans(group.school);
+      item.appendChild(detailsEl);
+    }
+
+    listEl.appendChild(item);
+  });
+
+  container.appendChild(headerEl);
+  container.appendChild(listEl);
   return container;
 }
 
 function setBackgroundForSlide(slide) {
-  const titleVideo = document.getElementById("video-title-bg");
-  const winnersVideo = document.getElementById("video-winners-bg");
-  
-  if (!titleVideo || !winnersVideo) return;
+  const video = document.getElementById("video-bg");
+  if (!video) return;
 
-  if (slide.type === "title" || slide.type === "titleOnly") {
-    titleVideo.classList.add("visible");
-    winnersVideo.classList.remove("visible");
-  } else {
-    winnersVideo.classList.add("visible");
-    titleVideo.classList.remove("visible");
+  let targetSrc = DEFAULT_BG_VIDEO;
+  if (slide.type === "kind" || slide.type === "olympiadTitle") {
+    targetSrc = getVideoForKind(slide.kindTitle);
+  }
+
+  const current = video.getAttribute("data-src") || video.getAttribute("src") || "";
+  if (current.endsWith(targetSrc)) {
+    return;
+  }
+
+  video.setAttribute("data-src", targetSrc);
+  const wasPaused = video.paused;
+
+  video.src = targetSrc;
+  if (!wasPaused) {
+    video.play().catch(() => {});
   }
 }
 
@@ -304,11 +520,19 @@ function renderCurrentSlide() {
   slideLayer.innerHTML = "";
 
   let content;
-  if (slide.type === "title" || slide.type === "titleOnly") {
-    const blue = slide.type === "titleOnly";
-    content = createTitleSlideContent(slide.contest, { blue });
+  if (slide.type === "kind") {
+    content = createKindSlideContent(slide.kindTitle);
+  } else if (slide.type === "olympiadTitle") {
+    content = createOlympiadTitleSlideContent(slide.kindTitle, slide.olympiadName);
+  } else if (slide.type === "medals") {
+    content = createMedalsSlideContent(slide);
+  } else if (slide.type === "representation") {
+    content = createRepresentationSlideContent(slide);
   } else {
-    content = createWinnersSlideContent(slide.contest);
+    const fallback = document.createElement("div");
+    fallback.className = "slide-content";
+    fallback.textContent = "Brak danych do wyświetlenia.";
+    content = fallback;
   }
 
   slideLayer.appendChild(content);
@@ -401,7 +625,9 @@ function startPresentation() {
 
   state.currentSlideIndex = 0;
   renderCurrentSlide();
-  startPolling();
+  // Automatyczne odświeżanie z arkusza wyłączone na czas prezentacji,
+  // żeby slajdy nie zmieniały się same.
+  // startPolling();
 }
 
 // --- Polling (Odświeżanie danych) ---
@@ -420,25 +646,15 @@ async function refreshData() {
     const newSlides = buildSlidesFromContests(newContests);
 
     if (newSlides.length > 0) {
-      // Próba zachowania pozycji slajdu
-      const currentSlide = state.slides[state.currentSlideIndex];
-      const currentTitle = currentSlide?.contest?.title;
-      const currentType = currentSlide?.type;
+      const prevIndex = state.currentSlideIndex;
 
       state.contests = newContests;
       state.slides = newSlides;
 
-      let newIndex = -1;
-      if (currentTitle) {
-        newIndex = state.slides.findIndex(s => s.contest.title === currentTitle && s.type === currentType);
-      }
+      state.currentSlideIndex = Math.min(prevIndex, Math.max(0, state.slides.length - 1));
 
-      if (newIndex !== -1) {
-        state.currentSlideIndex = newIndex;
-      } else {
-        // Safe index
-        state.currentSlideIndex = Math.min(state.currentSlideIndex, Math.max(0, state.slides.length - 1));
-        if (state.presentationStarted) renderCurrentSlide();
+      if (state.presentationStarted) {
+        renderCurrentSlide();
       }
       console.log("Dane odświeżone.");
     }
@@ -468,9 +684,23 @@ async function generateOfflineZip() {
 
     // 2. Pobierz zasoby (CSS, JS, Video, Fonty, Biblioteki)
     // Pobieramy aktualny tekst app.js i style.css, żeby offline był identyczny
-    const [bg1, bg2, font, animeLib, appJs, styleCss] = await Promise.all([
-      fetch("bg-1.mp4").then(r => r.blob()),
-      fetch("bg-2.mp4").then(r => r.blob()),
+    const videoFileNames = [
+      "bg_ogolne.mp4",
+      "olimpiada_jezyka_lacinskiego_i_kultury_antycznej.mp4",
+      "olimpiada_fizyczna.mp4",
+      "olimpiada_biologiczna.mp4",
+      "olimpiada_informatyczna.mp4",
+      "olimpiada_informatyczna_juniorow.mp4",
+      "olimpiada_chemiczna.mp4",
+      "olimpiada_filozoficzna.mp4",
+      "olimpiada_geograficzna.mp4",
+      "olimpiada_lingwistyki_matematycznej.mp4",
+      "olimpiada_astronomiczna.mp4",
+      "olimpiada_wiedzy_ekonomicznej.mp4"
+    ];
+
+    const [videoBlobs, font, animeLib, appJs, styleCss] = await Promise.all([
+      Promise.all(videoFileNames.map(name => fetch(name).then(r => r.blob()))),
       fetch("fonts/Uni Sans Heavy.otf").then(r => r.blob()),
       fetch("https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js").then(r => r.text()),
       fetch("app.js").then(r => r.text()),
@@ -492,8 +722,7 @@ async function generateOfflineZip() {
   <div id="app">
     <div id="loading-overlay"><div class="loader"></div></div>
     <div id="video-layer">
-      <video id="video-title-bg" src="bg-1.mp4" autoplay muted loop playsinline></video>
-      <video id="video-winners-bg" src="bg-2.mp4" autoplay muted loop playsinline></video>
+      <video id="video-bg" src="bg_ogolne.mp4" autoplay muted loop playsinline></video>
     </div>
     <div id="slide-layer"></div>
     <div id="start-overlay">
@@ -517,8 +746,9 @@ async function generateOfflineZip() {
     zip.file("index.html", offlineHtml);
     zip.file("anime.min.js", animeLib);
     zip.file("app.js", appJs);
-    zip.file("bg-1.mp4", bg1);
-    zip.file("bg-2.mp4", bg2);
+    videoFileNames.forEach((name, idx) => {
+      zip.file(name, videoBlobs[idx]);
+    });
     zip.folder("fonts").file("Uni Sans Heavy.otf", font);
 
     const blob = await zip.generateAsync({type:"blob"});
@@ -552,8 +782,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const startOverlay = document.getElementById("start-overlay");
   const startButton = document.getElementById("start-button");
   const downloadBtn = document.getElementById("download-offline-button");
-  const v1 = document.getElementById("video-title-bg");
-  const v2 = document.getElementById("video-winners-bg");
+  const bgVideo = document.getElementById("video-bg");
 
   if (startButton) startButton.addEventListener("click", () => {
     requestFullscreen().catch(e => console.warn(e));
@@ -595,12 +824,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     state.slides = buildSlidesFromContests(state.contests);
 
     // 2. Czekaj na wideo
-    await Promise.all([videoReady(v1), videoReady(v2)]);
+    await videoReady(bgVideo);
 
     clearTimeout(safetyNet);
 
     // 3. Pokaż UI startowe
-    if (v1) v1.classList.add("visible");
     if (loadingOverlay) loadingOverlay.classList.add("hidden");
     if (startOverlay) startOverlay.classList.add("visible");
 

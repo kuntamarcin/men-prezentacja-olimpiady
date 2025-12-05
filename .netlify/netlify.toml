@@ -1,5 +1,5 @@
 plugins = []
-functionsDirectory = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja/netlify/functions"
+functionsDirectory = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja-olimpiady/netlify/functions"
 functionsDirectoryOrigin = "config-v1"
 headers = []
 redirects = []
@@ -9,11 +9,11 @@ redirects = []
 [functions."*"]
 
 [build]
-publish = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja/biz.kreatywny/men-prezentacja"
-publishOrigin = "config"
+publish = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja-olimpiady"
+publishOrigin = "default"
 commandOrigin = "config"
 command = "# no build command"
-functions = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja/netlify/functions"
+functions = "/Users/marcinniewiadomski/biz.kreatywny/men-prezentacja-olimpiady/netlify/functions"
 
 [build.environment]
 
