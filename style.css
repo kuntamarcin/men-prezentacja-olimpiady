@@ -122,6 +122,20 @@ body {
   align-items: center;
 }
 
+/* Poziomy układ dla statystyk medali */
+.winners-list--medals {
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6vw;
+}
+
+.winner--medal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
 .winner {
   max-width: 80vw;
 }

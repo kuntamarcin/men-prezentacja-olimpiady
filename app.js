@@ -362,7 +362,7 @@ function createMedalsSlideContent(slide) {
   headerEl.textContent = "Nagrody";
 
   const listEl = document.createElement("div");
-  listEl.className = "winners-list";
+  listEl.className = "winners-list winners-list--medals";
 
   const parts = [];
 
@@ -381,7 +381,7 @@ function createMedalsSlideContent(slide) {
 
   parts.forEach(p => {
     const item = document.createElement("div");
-    item.className = "winner fade-seq";
+    item.className = "winner winner--medal fade-seq";
 
     const iconWrapper = document.createElement("div");
     iconWrapper.className = "medal-label-icon-wrapper";
