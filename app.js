@@ -367,26 +367,43 @@ function createMedalsSlideContent(slide) {
   const parts = [];
 
   if (slide.medalCounts.złoty > 0) {
-    parts.push({ label: "złote", count: slide.medalCounts.złoty });
+    parts.push({ key: "złoty", label: "złote", count: slide.medalCounts.złoty });
   }
   if (slide.medalCounts.srebrny > 0) {
-    parts.push({ label: "srebrne", count: slide.medalCounts.srebrny });
+    parts.push({ key: "srebrny", label: "srebrne", count: slide.medalCounts.srebrny });
   }
   if (slide.medalCounts.brązowy > 0) {
-    parts.push({ label: "brązowe", count: slide.medalCounts.brązowy });
+    parts.push({ key: "brązowy", label: "brązowe", count: slide.medalCounts.brązowy });
   }
   if (slide.medalCounts.wyróżnienie > 0) {
-    parts.push({ label: "wyróżnienia", count: slide.medalCounts.wyróżnienie });
+    parts.push({ key: "wyróżnienie", label: "wyróżnienia", count: slide.medalCounts.wyróżnienie });
   }
 
   parts.forEach(p => {
     const item = document.createElement("div");
     item.className = "winner fade-seq";
 
+    const iconWrapper = document.createElement("div");
+    iconWrapper.className = "medal-label-icon-wrapper";
+
+    const medalVideoSrc = getVideoForMedal(p.key);
+    if (medalVideoSrc) {
+      const medalEl = document.createElement("video");
+      medalEl.className = "medal-icon medal-icon--large";
+      medalEl.src = medalVideoSrc;
+      medalEl.autoplay = true;
+      medalEl.muted = true;
+      medalEl.loop = true;
+      medalEl.playsInline = true;
+      medalEl.setAttribute("preload", "auto");
+      iconWrapper.appendChild(medalEl);
+    }
+
     const nameEl = document.createElement("div");
     nameEl.className = "winner-name";
     nameEl.textContent = `${p.label}: ${p.count}`;
 
+    item.appendChild(iconWrapper);
     item.appendChild(nameEl);
     listEl.appendChild(item);
   });
@@ -452,38 +469,36 @@ function createRepresentationSlideContent(slide) {
 
     // Najpierw wszystkie nazwiska z tej szkoły, jedno pod drugim
     group.participants.forEach(p => {
-      const row = document.createElement("div");
-      row.className = "winner-row";
+      const block = document.createElement("div");
+      block.className = "winner-person-block";
 
       const medalVideoSrc = getVideoForMedal(p.medal);
       if (medalVideoSrc) {
         const medalEl = document.createElement("video");
-        medalEl.className = "medal-icon";
+        medalEl.className = "medal-icon medal-icon--person";
         medalEl.src = medalVideoSrc;
         medalEl.autoplay = true;
         medalEl.muted = true;
         medalEl.loop = true;
         medalEl.playsInline = true;
         medalEl.setAttribute("preload", "auto");
-        row.appendChild(medalEl);
+        block.appendChild(medalEl);
       }
 
       const nameEl = document.createElement("div");
       nameEl.className = "winner-name";
-
       nameEl.innerHTML = fixOrphans(p.name || "");
-      row.appendChild(nameEl);
+      block.appendChild(nameEl);
 
-      item.appendChild(row);
+      if (p.school) {
+        const schoolEl = document.createElement("div");
+        schoolEl.className = "winner-details";
+        schoolEl.innerHTML = fixOrphans(p.school);
+        block.appendChild(schoolEl);
+      }
+
+      item.appendChild(block);
     });
-
-    // Na końcu jedna linia z nazwą szkoły (jeśli jest)
-    if (group.school) {
-      const detailsEl = document.createElement("div");
-      detailsEl.className = "winner-details";
-      detailsEl.innerHTML = fixOrphans(group.school);
-      item.appendChild(detailsEl);
-    }
 
     listEl.appendChild(item);
   });
