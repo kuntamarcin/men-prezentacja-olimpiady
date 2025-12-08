@@ -315,10 +315,10 @@ const KIND_VIDEO_FILES = {
   "Olimpiada Geograficzna": "animations/bg_olimpiada_geograficzna.mp4",
   "Olimpiada Lingwistyki Matematycznej": "animations/bg_olimpiada_lingwistyki_matematycznej.mp4",
   "Olimpiada Astronomiczna": "animations/bg_olimpiada_astronomiczna.mp4",
-  "Olimpiada Wiedzy Ekonomicznej": "animations/bg_olimpiada_wiedzy_ekonomicznej.mp4"
+  "Olimpiada Wiedzy Ekonomicznej": "animations/bg_wiedzy_ekonomicznej.mp4"
 };
 
-const DEFAULT_BG_VIDEO = "animations/bg_ogolne.mp4";
+const DEFAULT_BG_VIDEO = "animations/bg-ogolny.mp4";
 
 function getVideoForKind(kindTitle) {
   return KIND_VIDEO_FILES[kindTitle] || DEFAULT_BG_VIDEO;
@@ -721,7 +721,7 @@ async function generateOfflineZip() {
     // 2. Pobierz zasoby (CSS, JS, Video, Fonty, Biblioteki)
     // Pobieramy aktualny tekst app.js i style.css, żeby offline był identyczny
     const videoFileNames = [
-      "animations/bg_ogolne.mp4",
+      "animations/bg-ogolny.mp4",
       "animations/bg_olimpiada_jezyka_lacinskiego_i_kultury_antycznej.mp4",
       "animations/bg_olimpiada_fizyczna.mp4",
       "animations/bg_olimpiada_biologiczna.mp4",
@@ -732,7 +732,7 @@ async function generateOfflineZip() {
       "animations/bg_olimpiada_geograficzna.mp4",
       "animations/bg_olimpiada_lingwistyki_matematycznej.mp4",
       "animations/bg_olimpiada_astronomiczna.mp4",
-      "animations/bg_olimpiada_wiedzy_ekonomicznej.mp4",
+      "animations/bg_wiedzy_ekonomicznej.mp4",
       "animations/zloto.webm",
       "animations/srebro.webm",
       "animations/braz.webm",
@@ -762,7 +762,7 @@ async function generateOfflineZip() {
   <div id="app">
     <div id="loading-overlay"><div class="loader"></div></div>
     <div id="video-layer">
-      <video id="video-bg" src="animations/bg_ogolne.mp4" autoplay muted loop playsinline></video>
+      <video id="video-bg" src="animations/bg-ogolny.mp4" autoplay muted loop playsinline></video>
     </div>
     <div id="slide-layer"></div>
     <div id="start-overlay">
