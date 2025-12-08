@@ -152,7 +152,19 @@ function parseContestsFromTable(table) {
     const kindTitle = lastKind;
     const olympiadName = lastName;
 
-    if (!kindTitle || !olympiadName) {
+    // Wiersz z samym rodzajem olimpiady (bez nazwy, uczniów itp.)
+    // traktujemy jako osobny nagłówek – tworzymy grupę rodzaju
+    // z pustą listą olimpiad, żeby powstał sam slajd tytułowy.
+    if (!kindTitle) {
+      continue;
+    }
+    if (!olympiadName) {
+      if (!kindMap.has(kindTitle)) {
+        kindMap.set(kindTitle, {
+          kindTitle,
+          olympiads: new Map()
+        });
+      }
       continue;
     }
 
@@ -293,20 +305,20 @@ function fitSlideContentToSafeArea() {
 }
 
 const KIND_VIDEO_FILES = {
-  "Olimpiada Języka Łacińskiego i Kultury Antycznej": "olimpiada_jezyka_lacinskiego_i_kultury_antycznej.mp4",
-  "Olimpiada Fizyczna": "olimpiada_fizyczna.mp4",
-  "Olimpiada Biologiczna": "olimpiada_biologiczna.mp4",
-  "Olimpiada Informatyczna": "olimpiada_informatyczna.mp4",
-  "Olimpiada Informatyczna Juniorów": "olimpiada_informatyczna_juniorow.mp4",
-  "Olimpiada Chemiczna": "olimpiada_chemiczna.mp4",
-  "Olimpiada Filozoficzna": "olimpiada_filozoficzna.mp4",
-  "Olimpiada Geograficzna": "olimpiada_geograficzna.mp4",
-  "Olimpiada Lingwistyki Matematycznej": "olimpiada_lingwistyki_matematycznej.mp4",
-  "Olimpiada Astronomiczna": "olimpiada_astronomiczna.mp4",
-  "Olimpiada Wiedzy Ekonomicznej": "olimpiada_wiedzy_ekonomicznej.mp4"
+  "Olimpiada Języka Łacińskiego i Kultury Antycznej": "animations/bg_olimpiada_jezyka_lacinskiego_i_kultury_antycznej.mp4",
+  "Olimpiada Fizyczna": "animations/bg_olimpiada_fizyczna.mp4",
+  "Olimpiada Biologiczna": "animations/bg_olimpiada_biologiczna.mp4",
+  "Olimpiada Informatyczna": "animations/bg_olimpiada_informatyczna.mp4",
+  "Olimpiada Informatyczna Juniorów": "animations/bg_olimpiada_informatyczna_juniorow.mp4",
+  "Olimpiada Chemiczna": "animations/bg_olimpiada_chemiczna.mp4",
+  "Olimpiada Filozoficzna": "animations/bg_olimpiada_filozoficzna.mp4",
+  "Olimpiada Geograficzna": "animations/bg_olimpiada_geograficzna.mp4",
+  "Olimpiada Lingwistyki Matematycznej": "animations/bg_olimpiada_lingwistyki_matematycznej.mp4",
+  "Olimpiada Astronomiczna": "animations/bg_olimpiada_astronomiczna.mp4",
+  "Olimpiada Wiedzy Ekonomicznej": "animations/bg_olimpiada_wiedzy_ekonomicznej.mp4"
 };
 
-const DEFAULT_BG_VIDEO = "bg_ogolne.mp4";
+const DEFAULT_BG_VIDEO = "animations/bg_ogolne.mp4";
 
 function getVideoForKind(kindTitle) {
   return KIND_VIDEO_FILES[kindTitle] || DEFAULT_BG_VIDEO;
@@ -384,6 +396,18 @@ function createMedalsSlideContent(slide) {
   return container;
 }
 
+const MEDAL_VIDEO_FILES = {
+  "złoty": "animations/zloto.webm",
+  "srebrny": "animations/srebro.webm",
+  "brązowy": "animations/braz.webm",
+  "wyróżnienie": "animations/wyroznienie_1.webm"
+};
+
+function getVideoForMedal(medal) {
+  if (!medal) return null;
+  return MEDAL_VIDEO_FILES[medal] || null;
+}
+
 function createRepresentationSlideContent(slide) {
   const container = document.createElement("div");
   container.className = "slide-content";
@@ -428,17 +452,29 @@ function createRepresentationSlideContent(slide) {
 
     // Najpierw wszystkie nazwiska z tej szkoły, jedno pod drugim
     group.participants.forEach(p => {
+      const row = document.createElement("div");
+      row.className = "winner-row";
+
+      const medalVideoSrc = getVideoForMedal(p.medal);
+      if (medalVideoSrc) {
+        const medalEl = document.createElement("video");
+        medalEl.className = "medal-icon";
+        medalEl.src = medalVideoSrc;
+        medalEl.autoplay = true;
+        medalEl.muted = true;
+        medalEl.loop = true;
+        medalEl.playsInline = true;
+        medalEl.setAttribute("preload", "auto");
+        row.appendChild(medalEl);
+      }
+
       const nameEl = document.createElement("div");
       nameEl.className = "winner-name";
 
-      let prefix = "";
-      if (p.medal === "złoty") prefix = "[złoty] ";
-      else if (p.medal === "srebrny") prefix = "[srebrny] ";
-      else if (p.medal === "brązowy") prefix = "[brązowy] ";
-      else if (p.medal === "wyróżnienie") prefix = "[wyróżnienie] ";
+      nameEl.innerHTML = fixOrphans(p.name || "");
+      row.appendChild(nameEl);
 
-      nameEl.innerHTML = fixOrphans(prefix + (p.name || ""));
-      item.appendChild(nameEl);
+      item.appendChild(row);
     });
 
     // Na końcu jedna linia z nazwą szkoły (jeśli jest)
@@ -685,18 +721,22 @@ async function generateOfflineZip() {
     // 2. Pobierz zasoby (CSS, JS, Video, Fonty, Biblioteki)
     // Pobieramy aktualny tekst app.js i style.css, żeby offline był identyczny
     const videoFileNames = [
-      "bg_ogolne.mp4",
-      "olimpiada_jezyka_lacinskiego_i_kultury_antycznej.mp4",
-      "olimpiada_fizyczna.mp4",
-      "olimpiada_biologiczna.mp4",
-      "olimpiada_informatyczna.mp4",
-      "olimpiada_informatyczna_juniorow.mp4",
-      "olimpiada_chemiczna.mp4",
-      "olimpiada_filozoficzna.mp4",
-      "olimpiada_geograficzna.mp4",
-      "olimpiada_lingwistyki_matematycznej.mp4",
-      "olimpiada_astronomiczna.mp4",
-      "olimpiada_wiedzy_ekonomicznej.mp4"
+      "animations/bg_ogolne.mp4",
+      "animations/bg_olimpiada_jezyka_lacinskiego_i_kultury_antycznej.mp4",
+      "animations/bg_olimpiada_fizyczna.mp4",
+      "animations/bg_olimpiada_biologiczna.mp4",
+      "animations/bg_olimpiada_informatyczna.mp4",
+      "animations/bg_olimpiada_informatyczna_juniorow.mp4",
+      "animations/bg_olimpiada_chemiczna.mp4",
+      "animations/bg_olimpiada_filozoficzna.mp4",
+      "animations/bg_olimpiada_geograficzna.mp4",
+      "animations/bg_olimpiada_lingwistyki_matematycznej.mp4",
+      "animations/bg_olimpiada_astronomiczna.mp4",
+      "animations/bg_olimpiada_wiedzy_ekonomicznej.mp4",
+      "animations/zloto.webm",
+      "animations/srebro.webm",
+      "animations/braz.webm",
+      "animations/wyroznienie_1.webm"
     ];
 
     const [videoBlobs, font, animeLib, appJs, styleCss] = await Promise.all([
@@ -722,7 +762,7 @@ async function generateOfflineZip() {
   <div id="app">
     <div id="loading-overlay"><div class="loader"></div></div>
     <div id="video-layer">
-      <video id="video-bg" src="bg_ogolne.mp4" autoplay muted loop playsinline></video>
+      <video id="video-bg" src="animations/bg_ogolne.mp4" autoplay muted loop playsinline></video>
     </div>
     <div id="slide-layer"></div>
     <div id="start-overlay">

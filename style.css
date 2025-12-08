@@ -126,6 +126,19 @@ body {
   max-width: 80vw;
 }
 
+.winner-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.2rem;
+}
+
+.medal-icon {
+  width: min(4.4vh, 3.2vw);
+  height: auto;
+  flex-shrink: 0;
+}
+
 .winner-name {
   font-weight: 700;
   font-size: min(4.4vh, 3.2vw);
