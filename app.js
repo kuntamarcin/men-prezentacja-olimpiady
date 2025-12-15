@@ -436,6 +436,14 @@ function createRepresentationSlideContent(slide) {
   const listEl = document.createElement("div");
   listEl.className = "winners-list";
 
+  // Przy bardzo długich listach przełączamy się na 2 kolumny,
+  // żeby nazwiska lepiej wypełniały przestrzeń i mieściły się w kadrze.
+  const totalParticipants = Array.isArray(slide.participants) ? slide.participants.length : 0;
+  if (totalParticipants >= 10) {
+    container.classList.add("slide-content--wide");
+    listEl.classList.add("winners-list--two-cols");
+  }
+
   // Grupujemy uczestników po szkole tak, aby nazwiska z tej samej szkoły
   // były pod sobą, a nazwa szkoły pojawiała się tylko raz pod grupą.
   const groupsMap = new Map();

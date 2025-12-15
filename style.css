@@ -87,6 +87,11 @@ body {
   transform-origin: center center;
 }
 
+/* Szerszy wariant (np. gdy lista laureatów jest w 2 kolumnach) */
+.slide-content--wide {
+  max-width: 92vw;
+}
+
 .slide-title {
   font-weight: 700;
   font-size: min(7vh, 5vw);
@@ -120,6 +125,28 @@ body {
   flex-direction: column;
   gap: 2vh;
   align-items: center;
+}
+
+/* 2-kolumnowy układ dla długich list (lepsze wykorzystanie przestrzeni) */
+.winners-list--two-cols {
+  display: block;
+  width: 100%;
+  column-count: 2;
+  column-gap: 6vw;
+  column-fill: balance;
+}
+
+.winners-list--two-cols .winner {
+  display: inline-block;
+  width: 100%;
+  max-width: none;
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+}
+
+.winners-list--two-cols .winner-person-block {
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
 }
 
 /* Poziomy układ dla statystyk medali */
