@@ -127,26 +127,26 @@ body {
   align-items: center;
 }
 
-/* 2-kolumnowy układ dla długich list (lepsze wykorzystanie przestrzeni) */
+/* 2-kolumnowy układ dla długich list (dzielimy równo po liczbie osób) */
 .winners-list--two-cols {
-  display: block;
   width: 100%;
-  column-count: 2;
-  column-gap: 6vw;
-  column-fill: balance;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 6vw;
 }
 
-.winners-list--two-cols .winner {
-  display: inline-block;
-  width: 100%;
-  max-width: none;
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
+.winners-col {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2vh;
 }
 
+/* Przy układzie kolumnowym nie dokładamy dodatkowego odstępu z margin-bottom */
 .winners-list--two-cols .winner-person-block {
-  break-inside: avoid;
-  -webkit-column-break-inside: avoid;
+  margin-bottom: 0;
 }
 
 /* Poziomy układ dla statystyk medali */

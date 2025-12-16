@@ -438,10 +438,59 @@ function createRepresentationSlideContent(slide) {
 
   // Przy bardzo długich listach przełączamy się na 2 kolumny,
   // żeby nazwiska lepiej wypełniały przestrzeń i mieściły się w kadrze.
+  // Ważne: dzielimy równo po liczbie osób (a nie "po wysokości" jak w CSS columns).
   const totalParticipants = Array.isArray(slide.participants) ? slide.participants.length : 0;
   if (totalParticipants >= 10) {
     container.classList.add("slide-content--wide");
     listEl.classList.add("winners-list--two-cols");
+
+    const colLeft = document.createElement("div");
+    colLeft.className = "winners-col";
+
+    const colRight = document.createElement("div");
+    colRight.className = "winners-col";
+
+    listEl.appendChild(colLeft);
+    listEl.appendChild(colRight);
+
+    const splitIndex = Math.ceil(totalParticipants / 2);
+
+    slide.participants.forEach((p, idx) => {
+      const block = document.createElement("div");
+      block.className = "winner-person-block fade-seq";
+
+      const medalVideoSrc = getVideoForMedal(p.medal);
+      if (medalVideoSrc) {
+        const medalEl = document.createElement("video");
+        medalEl.className = "medal-icon medal-icon--person";
+        medalEl.src = medalVideoSrc;
+        medalEl.autoplay = true;
+        medalEl.muted = true;
+        medalEl.loop = true;
+        medalEl.playsInline = true;
+        medalEl.setAttribute("preload", "auto");
+        block.appendChild(medalEl);
+      }
+
+      const nameEl = document.createElement("div");
+      nameEl.className = "winner-name";
+      nameEl.innerHTML = fixOrphans(p.name || "");
+      block.appendChild(nameEl);
+
+      if (p.school) {
+        const schoolEl = document.createElement("div");
+        schoolEl.className = "winner-details";
+        schoolEl.innerHTML = fixOrphans(p.school);
+        block.appendChild(schoolEl);
+      }
+
+      const targetCol = idx < splitIndex ? colLeft : colRight;
+      targetCol.appendChild(block);
+    });
+
+    container.appendChild(headerEl);
+    container.appendChild(listEl);
+    return container;
   }
 
   // Grupujemy uczestników po szkole tak, aby nazwiska z tej samej szkoły
