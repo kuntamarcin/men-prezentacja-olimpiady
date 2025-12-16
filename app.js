@@ -433,7 +433,7 @@ const MEDAL_VIDEO_FILES = {
   "złoty": "animations/zloto.webm",
   "srebrny": "animations/srebro.webm",
   "brązowy": "animations/braz.webm",
-  "wyróżnienie": "animations/wyroznienie_1.webm"
+  "wyróżnienie": "animations/wyroznienie.webm"
 };
 
 function getVideoForMedal(medal) {
@@ -824,7 +824,7 @@ async function generateOfflineZip() {
       "animations/zloto.webm",
       "animations/srebro.webm",
       "animations/braz.webm",
-      "animations/wyroznienie_1.webm"
+      "animations/wyroznienie.webm"
     ];
 
     const [videoBlobs, font, animeLib, appJs, styleCss] = await Promise.all([
