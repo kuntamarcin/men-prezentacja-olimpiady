@@ -391,11 +391,16 @@ function createMedalsSlideContent(slide) {
       const medalEl = document.createElement("video");
       medalEl.className = "medal-icon medal-icon--large";
       medalEl.src = medalVideoSrc;
-      medalEl.autoplay = true;
+      // Zgodnie z życzeniem: brak animacji (autoplay/loop wyłączone)
+      medalEl.autoplay = false;
       medalEl.muted = true;
-      medalEl.loop = true;
+      medalEl.loop = false;
       medalEl.playsInline = true;
       medalEl.setAttribute("preload", "auto");
+      
+      // Ustawiamy klatkę początkową na 1s, żeby nie było pusto (jeśli wideo ma fade-in)
+      medalEl.currentTime = 1.0; 
+      
       iconWrapper.appendChild(medalEl);
     }
 

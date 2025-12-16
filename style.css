@@ -187,7 +187,7 @@ body {
 
 /* Większa ikona na slajdzie statystyk medali */
 .medal-icon--large {
-  width: min(6vh, 4.2vw);
+  width: min(18vh, 12.6vw);
 }
 
 /* Ikona nad nazwiskiem jednej osoby */
