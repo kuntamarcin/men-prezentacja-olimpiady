@@ -158,6 +158,15 @@ body {
   gap: 6vw;
 }
 
+/* Zwiększona czcionka na slajdzie z medalami */
+.slide-content--medals .winners-header {
+  font-size: min(5.5vh, 4vw);
+}
+
+.slide-content--medals .winner-name {
+  font-size: min(5.5vh, 4vw);
+}
+
 .winner--medal {
   display: flex;
   flex-direction: column;
@@ -185,9 +194,9 @@ body {
   flex-shrink: 0;
 }
 
-/* Większa ikona na slajdzie statystyk medali */
+/* Większa ikona na slajdzie statystyk medali (jeszcze powiększona o 20%) */
 .medal-icon--large {
-  width: min(18vh, 12.6vw);
+  width: min(21.6vh, 15.12vw);
 }
 
 /* Ikona nad nazwiskiem jednej osoby */
