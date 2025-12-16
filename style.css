@@ -156,7 +156,36 @@ body {
   justify-content: center;
   align-items: flex-start;
   gap: 6vw;
+  width: 100%;
 }
+
+/* Wariant dla 1 rodzaju medali (np. same złote) - OGROMNE */
+.winners-list--medals.medals-count-1 {
+  gap: 0;
+}
+.winners-list--medals.medals-count-1 .medal-icon--large {
+  width: min(35vh, 25vw);
+}
+.winners-list--medals.medals-count-1 .winner-name {
+  font-size: min(8vh, 6vw);
+}
+
+/* Wariant dla 2 rodzajów medali - BARDZO DUŻE */
+.winners-list--medals.medals-count-2 {
+  gap: 15vw;
+}
+.winners-list--medals.medals-count-2 .medal-icon--large {
+  width: min(28vh, 20vw);
+}
+.winners-list--medals.medals-count-2 .winner-name {
+  font-size: min(6.5vh, 4.8vw);
+}
+
+/* Wariant dla 3 rodzajów medali - DUŻE (takie jak ustaliliśmy ostatnio) */
+.winners-list--medals.medals-count-3 {
+  gap: 8vw;
+}
+/* Tu dziedziczy standardowe .medal-icon--large (~21.6vh) i font (~5.5vh) */
 
 /* Zwiększona czcionka na slajdzie z medalami */
 .slide-content--medals .winners-header {

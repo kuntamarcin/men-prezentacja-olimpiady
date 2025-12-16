@@ -391,6 +391,10 @@ function createMedalsSlideContent(slide) {
     parts.push({ key: "wyróżnienie", label: "wyróżnienia", count: slide.medalCounts.wyróżnienie });
   }
 
+  // Dodajemy klasę pomocniczą w zależności od liczby kolumn (rodzajów medali)
+  // Umożliwia to skalowanie ikon/tekstu w CSS (np. ogromne przy 1 rodzaju)
+  listEl.classList.add(`medals-count-${parts.length}`);
+
   parts.forEach(p => {
     const item = document.createElement("div");
     item.className = "winner winner--medal fade-seq";
