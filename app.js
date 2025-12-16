@@ -21,14 +21,25 @@ const state = {
 
 function fixOrphans(text) {
   if (!text) return "";
-  const orphans = ['a', 'i', 'o', 'u', 'w', 'z', 'do', 'na', 'po', 'za', 'od', 'we', 'ze', 'ku', 'o', 'nr', 'im.', 'woj.'];
+  const orphans = [
+    'a', 'i', 'o', 'u', 'w', 'z', 
+    'do', 'na', 'po', 'za', 'od', 'we', 'ze', 'ku', 
+    'o', 'nr', 'im.', 'woj.', 
+    'nad', 'pod', 'przez', 'przy', 'dla', 'bez'
+  ];
   let result = text;
+  
+  // Przenoszenie zawartości w nawiasach do nowej linii
+  // Zamienia "tekst (nawias)" na "tekst <br>(nawias)"
+  result = result.replace(/(\s+)(\([^)]+\))/g, '<br>$2');
+
   orphans.forEach(word => {
     // Regex: granica słowa lub początek stringa + słowo + kropka(opcjonalnie) + spacja
     // Zamieniamy spację na twardą spację (\u00A0)
     const regex = new RegExp(`(^|\\s)(${word.replace('.', '\\.')})\\s`, 'gi');
     result = result.replace(regex, `$1$2\u00A0`);
   });
+
   // Wyróżnienie słowa "Olimpiada"
   result = result.replace(/Olimpiada/g, "<b>Olimpiada</b>");
   return result;
