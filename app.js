@@ -366,7 +366,7 @@ function createOlympiadTitleSlideContent(kindTitle, olympiadName) {
 
 function createMedalsSlideContent(slide) {
   const container = document.createElement("div");
-  container.className = "slide-content";
+  container.className = "slide-content slide-content--medals";
 
   const headerEl = document.createElement("div");
   headerEl.className = "winners-header fade-seq";
