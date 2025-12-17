@@ -326,7 +326,8 @@ const KIND_VIDEO_FILES = {
   "Olimpiada Geograficzna": "animations/bg_olimpiada_geograficzna.mp4",
   "Olimpiada Lingwistyki Matematycznej": "animations/bg_olimpiada_lingwistyki_matematycznej.mp4",
   "Olimpiada Astronomiczna": "animations/bg_olimpiada_astronomiczna.mp4",
-  "Olimpiada Wiedzy Ekonomicznej": "animations/bg_wiedzy_ekonomicznej.mp4"
+  "Olimpiada Wiedzy Ekonomicznej": "animations/bg_wiedzy_ekonomicznej.mp4",
+  "Konkurs Umiejętności Zawodowych": "animations/bg_konkurs_umiejetnosci_zawodowych.mp4"
 };
 
 const DEFAULT_BG_VIDEO = "animations/bg-ogolny.mp4";
@@ -821,6 +822,7 @@ async function generateOfflineZip() {
       "animations/bg_olimpiada_lingwistyki_matematycznej.mp4",
       "animations/bg_olimpiada_astronomiczna.mp4",
       "animations/bg_wiedzy_ekonomicznej.mp4",
+      "animations/bg_konkurs_umiejetnosci_zawodowych.mp4",
       "animations/zloto.webm",
       "animations/srebro.webm",
       "animations/braz.webm",
