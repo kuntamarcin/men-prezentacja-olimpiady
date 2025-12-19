@@ -189,7 +189,8 @@ body {
 
 /* Zwiększona czcionka na slajdzie z medalami */
 .slide-content--medals .winners-header {
-  font-size: min(5.5vh, 4vw);
+  /* -30% względem poprzedniego (5.5vh/4vw -> 3.85vh/2.8vw) */
+  font-size: min(3.85vh, 2.8vw);
 }
 
 .slide-content--medals .winner-name {

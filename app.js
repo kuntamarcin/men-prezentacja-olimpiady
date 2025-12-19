@@ -28,10 +28,17 @@ function fixOrphans(text) {
     'nad', 'pod', 'przez', 'przy', 'dla', 'bez'
   ];
   let result = text;
-  
+
   // Przenoszenie zawartości w nawiasach do nowej linii
   // Zamienia "tekst (nawias)" na "tekst <br>(nawias)"
   result = result.replace(/(\s+)(\([^)]+\))/g, '<br>$2');
+
+  // Cała zawartość nawiasów jako "niełamliwa" (bez łamania w środku)
+  // Zamieniamy spacje wewnątrz (...) na twarde spacje (\u00A0).
+  result = result.replace(/\(([^)]+)\)/g, (match, inner) => {
+    const innerNoWrap = String(inner).replace(/\s+/g, "\u00A0");
+    return `(${innerNoWrap})`;
+  });
 
   orphans.forEach(word => {
     // Regex: granica słowa lub początek stringa + słowo + kropka(opcjonalnie) + spacja
