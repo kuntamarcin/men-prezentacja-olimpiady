@@ -456,11 +456,17 @@ function createRepresentationSlideContent(slide) {
   listEl.className = "winners-list";
 
   // Porządek zawsze: złote -> srebrne -> brązowe -> wyróżnienia -> bez medalu
-  // (potem alfabetycznie po nazwisku).
+  // (potem szkoła, potem nazwisko).
   const participantsSorted = (Array.isArray(slide.participants) ? [...slide.participants] : []).sort((a, b) => {
     const aSort = a && a.medalSort != null ? a.medalSort : medalSortKey(a ? a.medal : null);
     const bSort = b && b.medalSort != null ? b.medalSort : medalSortKey(b ? b.medal : null);
     if (aSort !== bSort) return aSort - bSort;
+
+    const aSchool = (a && a.school) ? a.school : "";
+    const bSchool = (b && b.school) ? b.school : "";
+    const schoolCmp = aSchool.localeCompare(bSchool, "pl");
+    if (schoolCmp !== 0) return schoolCmp;
+
     const aName = (a && a.name) ? a.name : "";
     const bName = (b && b.name) ? b.name : "";
     return aName.localeCompare(bName, "pl");
@@ -523,71 +529,37 @@ function createRepresentationSlideContent(slide) {
     return container;
   }
 
-  // Grupujemy uczestników po szkole tak, aby nazwiska z tej samej szkoły
-  // były pod sobą, a nazwa szkoły pojawiała się tylko raz pod grupą.
-  const groupsMap = new Map();
-
+  // Dla krótszych list: jedna kolumna, ale dalej ta sama kolejność (wg medali).
   participantsSorted.forEach(p => {
-    const schoolKey = p.school || "";
-    if (!groupsMap.has(schoolKey)) {
-      groupsMap.set(schoolKey, {
-        school: schoolKey,
-        participants: [],
-        minMedalSort: p.medalSort != null ? p.medalSort : medalSortKey(null)
-      });
+    const block = document.createElement("div");
+    block.className = "winner-person-block fade-seq";
+
+    const medalVideoSrc = getVideoForMedal(p.medal);
+    if (medalVideoSrc) {
+      const medalEl = document.createElement("video");
+      medalEl.className = "medal-icon medal-icon--person";
+      medalEl.src = medalVideoSrc;
+      medalEl.autoplay = true;
+      medalEl.muted = true;
+      medalEl.loop = true;
+      medalEl.playsInline = true;
+      medalEl.setAttribute("preload", "auto");
+      block.appendChild(medalEl);
     }
-    const group = groupsMap.get(schoolKey);
-    group.participants.push(p);
-    const sortVal = p.medalSort != null ? p.medalSort : medalSortKey(null);
-    if (sortVal < group.minMedalSort) group.minMedalSort = sortVal;
-  });
 
-  const groups = Array.from(groupsMap.values());
+    const nameEl = document.createElement("div");
+    nameEl.className = "winner-name";
+    nameEl.innerHTML = fixOrphans(p.name || "");
+    block.appendChild(nameEl);
 
-  // Szkoły w kolejności wg najlepszego medalu, potem alfabetycznie po nazwie szkoły
-  groups.sort((a, b) => {
-    if (a.minMedalSort !== b.minMedalSort) return a.minMedalSort - b.minMedalSort;
-    return (a.school || "").localeCompare(b.school || "", "pl");
-  });
+    if (p.school) {
+      const schoolEl = document.createElement("div");
+      schoolEl.className = "winner-details";
+      schoolEl.innerHTML = fixOrphans(p.school);
+      block.appendChild(schoolEl);
+    }
 
-  groups.forEach(group => {
-    const item = document.createElement("div");
-    item.className = "winner fade-seq";
-
-    // Najpierw wszystkie nazwiska z tej szkoły, jedno pod drugim
-    group.participants.forEach(p => {
-      const block = document.createElement("div");
-      block.className = "winner-person-block";
-
-      const medalVideoSrc = getVideoForMedal(p.medal);
-      if (medalVideoSrc) {
-        const medalEl = document.createElement("video");
-        medalEl.className = "medal-icon medal-icon--person";
-        medalEl.src = medalVideoSrc;
-        medalEl.autoplay = true;
-        medalEl.muted = true;
-        medalEl.loop = true;
-        medalEl.playsInline = true;
-        medalEl.setAttribute("preload", "auto");
-        block.appendChild(medalEl);
-      }
-
-      const nameEl = document.createElement("div");
-      nameEl.className = "winner-name";
-      nameEl.innerHTML = fixOrphans(p.name || "");
-      block.appendChild(nameEl);
-
-      if (p.school) {
-        const schoolEl = document.createElement("div");
-        schoolEl.className = "winner-details";
-        schoolEl.innerHTML = fixOrphans(p.school);
-        block.appendChild(schoolEl);
-      }
-
-      item.appendChild(block);
-    });
-
-    listEl.appendChild(item);
+    listEl.appendChild(block);
   });
 
   container.appendChild(headerEl);
