@@ -324,8 +324,10 @@ const KIND_VIDEO_FILES = {
   "Olimpiada Chemiczna": "animations/bg_olimpiada_chemiczna.mp4",
   "Olimpiada Filozoficzna": "animations/bg_olimpiada_filozoficzna.mp4",
   "Olimpiada Geograficzna": "animations/bg_olimpiada_geograficzna.mp4",
+  "Olimpiada Matematyczna": "animations/bg_olimpiada_matematyczna.mp4",
   "Olimpiada Lingwistyki Matematycznej": "animations/bg_olimpiada_lingwistyki_matematycznej.mp4",
   "Olimpiada Astronomiczna": "animations/bg_olimpiada_astronomiczna.mp4",
+  "Olimpiada Astronomii i Astrofizyki": "animations/bg_olimpiada_astrofizyczna.mp4",
   "Olimpiada Wiedzy Ekonomicznej": "animations/bg_wiedzy_ekonomicznej.mp4",
   "Konkurs Umiejętności Zawodowych": "animations/bg_konkurs_umiejetnosci_zawodowych.mp4"
 };
@@ -453,10 +455,21 @@ function createRepresentationSlideContent(slide) {
   const listEl = document.createElement("div");
   listEl.className = "winners-list";
 
+  // Porządek zawsze: złote -> srebrne -> brązowe -> wyróżnienia -> bez medalu
+  // (potem alfabetycznie po nazwisku).
+  const participantsSorted = (Array.isArray(slide.participants) ? [...slide.participants] : []).sort((a, b) => {
+    const aSort = a && a.medalSort != null ? a.medalSort : medalSortKey(a ? a.medal : null);
+    const bSort = b && b.medalSort != null ? b.medalSort : medalSortKey(b ? b.medal : null);
+    if (aSort !== bSort) return aSort - bSort;
+    const aName = (a && a.name) ? a.name : "";
+    const bName = (b && b.name) ? b.name : "";
+    return aName.localeCompare(bName, "pl");
+  });
+
   // Przy bardzo długich listach przełączamy się na 2 kolumny,
   // żeby nazwiska lepiej wypełniały przestrzeń i mieściły się w kadrze.
   // Ważne: dzielimy równo po liczbie osób (a nie "po wysokości" jak w CSS columns).
-  const totalParticipants = Array.isArray(slide.participants) ? slide.participants.length : 0;
+  const totalParticipants = participantsSorted.length;
   if (totalParticipants >= 10) {
     container.classList.add("slide-content--wide");
     listEl.classList.add("winners-list--two-cols");
@@ -472,7 +485,7 @@ function createRepresentationSlideContent(slide) {
 
     const splitIndex = Math.ceil(totalParticipants / 2);
 
-    slide.participants.forEach((p, idx) => {
+    participantsSorted.forEach((p, idx) => {
       const block = document.createElement("div");
       block.className = "winner-person-block fade-seq";
 
@@ -514,7 +527,7 @@ function createRepresentationSlideContent(slide) {
   // były pod sobą, a nazwa szkoły pojawiała się tylko raz pod grupą.
   const groupsMap = new Map();
 
-  slide.participants.forEach(p => {
+  participantsSorted.forEach(p => {
     const schoolKey = p.school || "";
     if (!groupsMap.has(schoolKey)) {
       groupsMap.set(schoolKey, {
@@ -819,8 +832,10 @@ async function generateOfflineZip() {
       "animations/bg_olimpiada_chemiczna.mp4",
       "animations/bg_olimpiada_filozoficzna.mp4",
       "animations/bg_olimpiada_geograficzna.mp4",
+      "animations/bg_olimpiada_matematyczna.mp4",
       "animations/bg_olimpiada_lingwistyki_matematycznej.mp4",
       "animations/bg_olimpiada_astronomiczna.mp4",
+      "animations/bg_olimpiada_astrofizyczna.mp4",
       "animations/bg_wiedzy_ekonomicznej.mp4",
       "animations/bg_konkurs_umiejetnosci_zawodowych.mp4",
       "animations/zloto.webm",
@@ -844,7 +859,7 @@ async function generateOfflineZip() {
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <title>Prezentacja (Offline)</title>
+  <title>Gala olimpijczyków międzynarodowych 2025 (Offline)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>${styleCss}</style>
 </head>
@@ -856,7 +871,7 @@ async function generateOfflineZip() {
     </div>
     <div id="slide-layer"></div>
     <div id="start-overlay">
-      <h1>Prezentacja laureatów (Offline)</h1>
+      <h1>Gala olimpijczyków międzynarodowych 2025 (Offline)</h1>
       <p>Tryb offline. Kliknij Start.</p>
       <button id="start-button">Start prezentacji</button>
     </div>
