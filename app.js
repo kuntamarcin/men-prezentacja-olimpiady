@@ -371,10 +371,10 @@ function createMedalsSlideContent(slide) {
   const container = document.createElement("div");
   container.className = "slide-content slide-content--medals";
 
-  // Usunięto nagłówek "Nagrody" na życzenie użytkownika
-  // const headerEl = document.createElement("div");
-  // headerEl.className = "winners-header fade-seq";
-  // headerEl.textContent = "Nagrody";
+  // Nagłówek: nazwa olimpiady (żeby było jasne, do czego odnoszą się duże medale)
+  const headerEl = document.createElement("div");
+  headerEl.className = "winners-header fade-seq";
+  headerEl.textContent = slide.olympiadName || "";
 
   const listEl = document.createElement("div");
   listEl.className = "winners-list winners-list--medals";
@@ -427,7 +427,9 @@ function createMedalsSlideContent(slide) {
     listEl.appendChild(item);
   });
 
-  // container.appendChild(headerEl);
+  if (headerEl.textContent) {
+    container.appendChild(headerEl);
+  }
   container.appendChild(listEl);
   return container;
 }
