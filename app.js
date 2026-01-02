@@ -381,7 +381,9 @@ function createMedalsSlideContent(slide) {
   // Nagłówek: nazwa olimpiady (żeby było jasne, do czego odnoszą się duże medale)
   const headerEl = document.createElement("div");
   headerEl.className = "winners-header fade-seq";
-  headerEl.textContent = slide.olympiadName || "";
+  // Używamy fixOrphans + innerHTML, żeby np. wpisane w arkuszu "<br>" działało jak
+  // faktyczne złamanie linii, a nie było wyświetlane jako tekst "<BR>".
+  headerEl.innerHTML = fixOrphans(slide.olympiadName || "");
 
   const listEl = document.createElement("div");
   listEl.className = "winners-list winners-list--medals";
@@ -485,7 +487,9 @@ function createRepresentationSlideContent(slide) {
   // żeby nazwiska lepiej wypełniały przestrzeń i mieściły się w kadrze.
   // Ważne: dzielimy równo po liczbie osób (a nie "po wysokości" jak w CSS columns).
   const totalParticipants = participantsSorted.length;
-  if (totalParticipants >= 10) {
+  // Przy 8 lub więcej osobach przełączamy się na dwie kolumny,
+  // żeby lepiej wykorzystać przestrzeń i uniknąć zbyt wysokich list.
+  if (totalParticipants >= 8) {
     container.classList.add("slide-content--wide");
     listEl.classList.add("winners-list--two-cols");
 
