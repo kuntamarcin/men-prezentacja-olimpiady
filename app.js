@@ -29,6 +29,10 @@ function fixOrphans(text) {
   ];
   let result = text;
 
+  // Zamiana zapisów typu &lt;br&gt; / &lt;BR/&gt; na prawdziwe znaczniki <br>
+  // (Google Sheets potrafi zamienić wpisane "<br>" na encje HTML).
+  result = result.replace(/&lt;\s*br\s*\/?\s*&gt;/gi, '<br>');
+
   // Przenoszenie zawartości w nawiasach do nowej linii
   // Zamienia "tekst (nawias)" na "tekst <br>(nawias)"
   result = result.replace(/(\s+)(\([^)]+\))/g, '<br>$2');
