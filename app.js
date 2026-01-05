@@ -14,7 +14,8 @@ const state = {
   currentSlideIndex: 0,
   presentationStarted: false,
   pollingTimer: null,
-  currentAnimation: null
+  currentAnimation: null,
+  animationsEnabled: true // możliwość szybkiego wyłączenia animacji (klawisz "A")
 };
 
 // --- Funkcje Pomocnicze ---
@@ -294,11 +295,13 @@ function buildSlidesFromContests(contestsByKind) {
 
 // --- Renderowanie Slajdów ---
 
-// Dopasowanie całej zawartości slajdu do bezpiecznego kadru
-// Jeśli treści (np. bardzo długa lista laureatów) jest zbyt dużo,
-// cała zawartość jest proporcjonalnie skalowana w dół tak, aby
-// zmieściła się w "safe area" wyznaczonej przez #slide-layer.
-function fitSlideContentToSafeArea() {
+// Dopasowanie całej zawartości slajdu do bezpiecznego kadru.
+// Domyślnie tylko zmniejszamy treść, gdy jest jej zbyt dużo.
+// Dla wybranych slajdów (np. lista laureatów) możemy też powiększać,
+// przekazując opcję { allowUpscale: true }.
+function fitSlideContentToSafeArea(options = {}) {
+  const { allowUpscale = false } = options;
+
   const slideLayer = document.getElementById("slide-layer");
   if (!slideLayer) return;
 
@@ -308,25 +311,49 @@ function fitSlideContentToSafeArea() {
   // Reset ewentualnego poprzedniego skalowania
   content.style.transform = "";
 
+  const isTwoColsList = !!content.querySelector('.winners-list--two-cols');
+
   // Wysokość obszaru roboczego (bezpieczeństwa)
   const layerHeight = slideLayer.clientHeight || slideLayer.getBoundingClientRect().height;
-  // Nieco mniejszy margines "bezpieczeństwa" – dajemy więcej miejsca na tekst
-  // (3% wysokości u góry i dołu zamiast 5%).
-  const verticalMargin = layerHeight * 0.03;
+
+  // Domyślny margines bezpieczeństwa (3% wysokości u góry i dołu).
+  // Dla dwukolumnowej listy laureatów dajemy nieco większy margines,
+  // żeby nie "wpadała" w górne logo i dolne elementy.
+  let verticalMarginFactor = 0.03;
+  if (allowUpscale && isTwoColsList) {
+    verticalMarginFactor = 0.07; // ok. 7% u góry i dołu dla 2 kolumn
+  }
+
+  const verticalMargin = layerHeight * verticalMarginFactor;
   const safeHeight = layerHeight - verticalMargin * 2;
 
   // Naturalna wysokość treści (nieograniczona max-height)
   const contentHeight = content.scrollHeight;
   if (!contentHeight || contentHeight <= 0) return;
 
-  // Skala potrzebna, aby treść wypełniła bezpieczną wysokość.
-  // Jeśli treści jest mało – powiększamy, jeśli dużo – zmniejszamy.
-  const scale = safeHeight / contentHeight;
+  let scale = safeHeight / contentHeight;
 
-  // Pomijamy mikroskopijne różnice (żeby nie rozmywać tekstu przy ~1.0x)
-  if (Math.abs(scale - 1) > 0.02) {
-    content.style.transformOrigin = "center center";
-    content.style.transform = `scale(${scale})`;
+  if (allowUpscale) {
+    // Nie pozwalamy "eksplodować" slajdowi – ograniczamy maksymalne powiększenie.
+    const maxScale = isTwoColsList ? 1.5 : 1.8; // 2 kolumny trochę ostrożniej
+    const clampedScale = Math.min(scale, maxScale);
+
+    // Dodatkowo zmniejszamy końcową skalę, żeby kontener nie dotykał krawędzi.
+    // Dla dwukolumnowych list trochę mocniej (~30%), dla pozostałych ~20%).
+    const shrinkFactor = isTwoColsList ? 0.7 : 0.8;
+    const finalScale = clampedScale * shrinkFactor;
+
+    // Pomijamy mikroskopijne różnice (żeby nie rozmywać tekstu przy ~1.0x).
+    if (Math.abs(finalScale - 1) > 0.02) {
+      content.style.transformOrigin = "center center";
+      content.style.transform = `scale(${finalScale})`;
+    }
+  } else {
+    // Klasyczny tryb: tylko zmniejszamy, jeśli wysokość przekracza safe area.
+    if (scale < 1) {
+      content.style.transformOrigin = "center center";
+      content.style.transform = `scale(${scale})`;
+    }
   }
 }
 
@@ -367,7 +394,8 @@ function createKindSlideContent(kindTitle) {
 
 function createOlympiadTitleSlideContent(kindTitle, olympiadName) {
   const container = document.createElement("div");
-  container.className = "slide-content";
+  // Dodatkowa klasa, żeby móc delikatnie zmniejszyć czcionki tylko na tym typie slajdu
+  container.className = "slide-content slide-content--olympiad-title";
 
   const subtitleEl = document.createElement("div");
   subtitleEl.className = "slide-subtitle fade-seq";
@@ -465,7 +493,8 @@ function getVideoForMedal(medal) {
 
 function createRepresentationSlideContent(slide) {
   const container = document.createElement("div");
-  container.className = "slide-content";
+  // Dodatkowa klasa pozwala zmieniać wyrównanie (lewe) tylko na slajdach z listą osób
+  container.className = "slide-content slide-content--representation";
 
   const headerEl = document.createElement("div");
   headerEl.className = "winners-header fade-seq";
@@ -494,7 +523,7 @@ function createRepresentationSlideContent(slide) {
     return aName.localeCompare(bName, "pl");
   });
 
-  // Przy bardzo długich listach przełączamy się na 2 kolumny,
+  // Przy dłuższych listach przełączamy się na 2 kolumny,
   // żeby nazwiska lepiej wypełniały przestrzeń i mieściły się w kadrze.
   // Ważne: dzielimy równo po liczbie osób (a nie "po wysokości" jak w CSS columns).
   const totalParticipants = participantsSorted.length;
@@ -529,6 +558,10 @@ function createRepresentationSlideContent(slide) {
       const block = document.createElement("div");
       block.className = "winner-person-block fade-seq";
 
+      // Wiersz z medalem i nazwiskiem w jednej linii
+      const nameRow = document.createElement("div");
+      nameRow.className = "winner-name-row";
+
       const medalVideoSrc = getVideoForMedal(p.medal);
       if (medalVideoSrc) {
         const medalEl = document.createElement("video");
@@ -539,13 +572,19 @@ function createRepresentationSlideContent(slide) {
         medalEl.loop = true;
         medalEl.playsInline = true;
         medalEl.setAttribute("preload", "auto");
-        block.appendChild(medalEl);
+        nameRow.appendChild(medalEl);
       }
+
+      // Nie łamiemy nazwiska – wszystkie spacje zamieniamy na twarde (NBSP)
+      const rawName = p.name || "";
+      const unbreakableName = rawName.replace(/\s+/g, "\u00A0");
 
       const nameEl = document.createElement("div");
       nameEl.className = "winner-name";
-      nameEl.innerHTML = fixOrphans(p.name || "");
-      block.appendChild(nameEl);
+      nameEl.innerHTML = fixOrphans(unbreakableName);
+      nameRow.appendChild(nameEl);
+
+      block.appendChild(nameRow);
 
       if (p.school) {
         const schoolEl = document.createElement("div");
@@ -568,6 +607,10 @@ function createRepresentationSlideContent(slide) {
     const block = document.createElement("div");
     block.className = "winner-person-block fade-seq";
 
+    // Wiersz z medalem i nazwiskiem w jednej linii
+    const nameRow = document.createElement("div");
+    nameRow.className = "winner-name-row";
+
     const medalVideoSrc = getVideoForMedal(p.medal);
     if (medalVideoSrc) {
       const medalEl = document.createElement("video");
@@ -578,13 +621,19 @@ function createRepresentationSlideContent(slide) {
       medalEl.loop = true;
       medalEl.playsInline = true;
       medalEl.setAttribute("preload", "auto");
-      block.appendChild(medalEl);
+      nameRow.appendChild(medalEl);
     }
+
+    // Nie łamiemy nazwiska – wszystkie spacje zamieniamy na twarde (NBSP)
+    const rawName = p.name || "";
+    const unbreakableName = rawName.replace(/\s+/g, "\u00A0");
 
     const nameEl = document.createElement("div");
     nameEl.className = "winner-name";
-    nameEl.innerHTML = fixOrphans(p.name || "");
-    block.appendChild(nameEl);
+    nameEl.innerHTML = fixOrphans(unbreakableName);
+    nameRow.appendChild(nameEl);
+
+    block.appendChild(nameRow);
 
     if (p.school) {
       const schoolEl = document.createElement("div");
@@ -628,6 +677,20 @@ function setBackgroundForSlide(slide) {
 
 // Prosta animacja całych bloków (bez rozbijania na litery)
 function fadeInSequence(elements) {
+  // Jeśli animacje są wyłączone (np. do testów), po prostu ustawiamy
+  // końcowy stan bez uruchamiania anime.js.
+  if (!state.animationsEnabled) {
+    if (state.currentAnimation) {
+      state.currentAnimation.pause();
+      state.currentAnimation = null;
+    }
+    elements.forEach(el => {
+      el.style.opacity = '1';
+      el.style.transform = 'none';
+    });
+    return;
+  }
+
   if (state.currentAnimation) {
     state.currentAnimation.pause();
     state.currentAnimation = null;
@@ -682,8 +745,16 @@ function renderCurrentSlide() {
   slideLayer.appendChild(content);
   setBackgroundForSlide(slide);
 
-  // Dopasowanie zawartości do bezpiecznego kadru (szczególnie przy wielu laureatach)
-  fitSlideContentToSafeArea();
+  // Dopasowanie zawartości do bezpiecznego kadru.
+  // Slajdy z listą laureatów ("representation") mogą być skalowane także w górę,
+  // ale tylko przy 3+ osobach – dla 1–2 nazwisk bazujemy głównie na rozmiarze fontu.
+  let allowUpscale = false;
+  if (slide.type === "representation") {
+    const count = Array.isArray(slide.participants) ? slide.participants.length : 0;
+    allowUpscale = count >= 3;
+  }
+
+  fitSlideContentToSafeArea({ allowUpscale });
 
   // Animujemy wszystko co ma klasę fade-seq
   const animatables = slideLayer.querySelectorAll(".fade-seq");
@@ -744,6 +815,13 @@ function setupKeyboardNavigation() {
       case "End":
         e.preventDefault();
         goToLastSlide();
+        break;
+      case "a":
+      case "A":
+        // Toggle animacji fade-in (do testów szybkości przewijania slajdów)
+        e.preventDefault();
+        state.animationsEnabled = !state.animationsEnabled;
+        console.log("Animations enabled:", state.animationsEnabled);
         break;
     }
   });

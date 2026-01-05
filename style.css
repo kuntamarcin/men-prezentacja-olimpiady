@@ -27,18 +27,29 @@ html, body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background: #ffffff;
+  background: #000000; /* czarne pasy na zewnątrz obszaru prezentacji */
 }
 
 body {
   font-family: "UniSansHeavyCAPS", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
+/*
+ * Główny obszar prezentacji utrzymujemy w stałych proporcjach 16:9
+ * i centrowany – reszta ekranu to czarne pasy.
+ */
 #app {
   position: relative;
+  /* Podstawowe wymiary w oparciu o szerokość (16:9) */
   width: 100vw;
-  height: 100vh;
+  height: 56.25vw; /* 9/16 = 0.5625 */
+  /* Nie wychodzimy poza wysokość ekranu – węższe ekrany ograniczają szerokość */
+  max-height: 100vh;
+  max-width: 177.78vh; /* 16/9 ≈ 1.7778 */
   overflow: hidden;
 }
 
@@ -106,6 +117,15 @@ body {
   padding-top: 0.1em;
 }
 
+/* Delikatnie mniejsza typografia tylko na slajdach z nazwą konkretnej olimpiady */
+.slide-content--olympiad-title .slide-title {
+  font-size: min(6vh, 4.2vw);
+}
+
+.slide-content--olympiad-title .slide-subtitle {
+  font-size: min(3.8vh, 2.9vw);
+}
+
 /* Slajdy tytułowe bez laureatów – cały tekst na niebiesko */
 .slide-content--blue-title .slide-title,
 .slide-content--blue-title .slide-subtitle {
@@ -124,6 +144,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 2vh;
+  /* wracamy do centrowania listy w kolumnie */
   align-items: center;
 }
 
@@ -141,6 +162,7 @@ body {
   flex: 1 1 0;
   display: flex;
   flex-direction: column;
+  /* elementy w kolumnie znów centrowane, ale sam blok osoby ma układ poziomy */
   align-items: center;
   gap: 2vh;
 }
@@ -197,6 +219,23 @@ body {
   font-size: min(5.5vh, 4vw);
 }
 
+/* Slajdy z listą laureatów – wracamy do wyrównania do środka */
+.slide-content--representation {
+  text-align: center;
+  align-items: center;
+}
+
+/* Dwukolumnowa lista laureatów – trochę węższy kontener,
+ * żeby nie opierała się o boczne krawędzie przy bardzo długich nazwiskach. */
+.slide-content--representation.slide-content--wide {
+  max-width: 82%;
+}
+
+.slide-content--representation .winner-name,
+.slide-content--representation .winner-details {
+  text-align: center;
+}
+
 .winner--medal {
   display: flex;
   flex-direction: column;
@@ -213,8 +252,17 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  gap: 0.6rem;
+  gap: 0.4rem;
   margin-bottom: 2vh;
+}
+
+/* Wiersz z medalem i nazwiskiem w jednej linii */
+.winner-name-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
 }
 
 /* Ikona medalu - podstawowy rozmiar */
@@ -229,9 +277,13 @@ body {
   width: min(21.6vh, 15.12vw);
 }
 
-/* Ikona nad nazwiskiem jednej osoby */
+/* Ikona przy nazwisku jednej osoby (z lewej strony)
+ * Wysokość ~= 250% wysokości liter nazwiska (2.5em w wierszu z nazwiskiem).
+ */
 .medal-icon--person {
-  margin-bottom: 0.2rem;
+  height: 2.5em;
+  width: auto;
+  margin-bottom: 0;
 }
 
 /* Wrapper dla ikony + napisu na slajdzie statystyk */
@@ -265,22 +317,22 @@ body {
  * (klasy dokładane w JS na slajdach typu "reprezentacja").
  */
 
-/* Bardzo mało osób (1–4) – maksymalnie duże litery */
+/* Bardzo mało osób (1–4) – DUŻE, ale z limitem żeby nie "eksplodowały" */
 .slide-content--density-very-low .winner-name {
-  font-size: min(7vh, 5vw);
+  font-size: min(6vh, 4.3vw);
 }
 
 .slide-content--density-very-low .winner-details {
-  font-size: min(4vh, 3vw);
+  font-size: min(3.6vh, 2.7vw);
 }
 
-/* Mała/średnia lista (5–8 osób) – powiększone względem bazowego */
+/* Mała/średnia lista (5–8 osób) – powiększone względem bazowego, ale z limitem */
 .slide-content--density-low .winner-name {
-  font-size: min(5.6vh, 4vw);
+  font-size: min(5vh, 3.6vw);
 }
 
 .slide-content--density-low .winner-details {
-  font-size: min(3.2vh, 2.4vw);
+  font-size: min(3vh, 2.2vw);
 }
 
 #loading-overlay {
