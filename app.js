@@ -319,10 +319,12 @@ function fitSlideContentToSafeArea() {
   const contentHeight = content.scrollHeight;
   if (!contentHeight || contentHeight <= 0) return;
 
+  // Skala potrzebna, aby treść wypełniła bezpieczną wysokość.
+  // Jeśli treści jest mało – powiększamy, jeśli dużo – zmniejszamy.
   const scale = safeHeight / contentHeight;
 
-  // Skalujemy tylko w dół; nie powiększamy ponad 100%
-  if (scale < 1) {
+  // Pomijamy mikroskopijne różnice (żeby nie rozmywać tekstu przy ~1.0x)
+  if (Math.abs(scale - 1) > 0.02) {
     content.style.transformOrigin = "center center";
     content.style.transform = `scale(${scale})`;
   }
