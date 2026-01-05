@@ -245,6 +245,7 @@ body {
 
 .winner-name {
   font-weight: 700;
+  /* Bazowy, "bezpieczny" rozmiar – używany przy dłuższych listach */
   font-size: min(4.4vh, 3.2vw);
   line-height: 1.35;
   padding-top: 0.1em;
@@ -257,6 +258,29 @@ body {
   line-height: 1.35;
   padding-top: 0.1em;
   margin-top: 0.8vh;
+}
+
+/*
+ * Dynamiczne warianty rozmiaru czcionki w zależności od liczby laureatów
+ * (klasy dokładane w JS na slajdach typu "reprezentacja").
+ */
+
+/* Bardzo mało osób (1–4) – maksymalnie duże litery */
+.slide-content--density-very-low .winner-name {
+  font-size: min(7vh, 5vw);
+}
+
+.slide-content--density-very-low .winner-details {
+  font-size: min(4vh, 3vw);
+}
+
+/* Mała/średnia lista (5–8 osób) – powiększone względem bazowego */
+.slide-content--density-low .winner-name {
+  font-size: min(5.6vh, 4vw);
+}
+
+.slide-content--density-low .winner-details {
+  font-size: min(3.2vh, 2.4vw);
 }
 
 #loading-overlay {

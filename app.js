@@ -310,7 +310,9 @@ function fitSlideContentToSafeArea() {
 
   // Wysokość obszaru roboczego (bezpieczeństwa)
   const layerHeight = slideLayer.clientHeight || slideLayer.getBoundingClientRect().height;
-  const verticalMargin = layerHeight * 0.05; // ok. 5% wysokości u góry i dołu
+  // Nieco mniejszy margines "bezpieczeństwa" – dajemy więcej miejsca na tekst
+  // (3% wysokości u góry i dołu zamiast 5%).
+  const verticalMargin = layerHeight * 0.03;
   const safeHeight = layerHeight - verticalMargin * 2;
 
   // Naturalna wysokość treści (nieograniczona max-height)
@@ -465,7 +467,10 @@ function createRepresentationSlideContent(slide) {
 
   const headerEl = document.createElement("div");
   headerEl.className = "winners-header fade-seq";
-  headerEl.textContent = slide.olympiadName || "Reprezentacja";
+  // Używamy fixOrphans + innerHTML, tak jak na innych slajdach,
+  // żeby zapisany w arkuszu tekst "<BR>" dawał faktyczny złamany wiersz,
+  // a nie był wyświetlany dosłownie.
+  headerEl.innerHTML = fixOrphans(slide.olympiadName || "Reprezentacja");
 
   const listEl = document.createElement("div");
   listEl.className = "winners-list";
@@ -491,6 +496,16 @@ function createRepresentationSlideContent(slide) {
   // żeby nazwiska lepiej wypełniały przestrzeń i mieściły się w kadrze.
   // Ważne: dzielimy równo po liczbie osób (a nie "po wysokości" jak w CSS columns).
   const totalParticipants = participantsSorted.length;
+
+  // Dobieramy wariant rozmiaru czcionki w zależności od liczby laureatów.
+  // Małe listy (do 4 osób) – bardzo duże litery,
+  // średnie (5–8) – powiększone, powyżej 8 – rozmiar bazowy.
+  if (totalParticipants > 0 && totalParticipants <= 4) {
+    container.classList.add("slide-content--density-very-low");
+  } else if (totalParticipants <= 8) {
+    container.classList.add("slide-content--density-low");
+  }
+
   // Przy 8 lub więcej osobach przełączamy się na dwie kolumny,
   // żeby lepiej wykorzystać przestrzeń i uniknąć zbyt wysokich list.
   if (totalParticipants >= 8) {
