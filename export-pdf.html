@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <title>Eksport prezentacji do PDF</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Ładujemy te same zasoby co w oryginale -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Biblioteki niezbędne do PDF (dodane tylko w tym pliku) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+  
+  <!-- Oryginalna logika aplikacji -->
+  <script src="app.js" defer></script>
+
+  <style>
+    /* Dodatkowe style dla przycisku PDF */
+    #download-pdf-button {
+      pointer-events: auto;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      border: none;
+      text-decoration: none;
+      font-family: "UniSansHeavyCAPS", sans-serif;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 0.7rem 1.8rem;
+      border-radius: 999px;
+      background: #e74c3c; /* Czerwony kolor dla odróżnienia */
+      color: #ffffff;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    #download-pdf-button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.5);
+    }
+    #download-pdf-button:active:not(:disabled) {
+      transform: translateY(1px);
+      box-shadow: 0 3px 10px rgba(0,0,0,0.5);
+    }
+    #download-pdf-button:disabled {
+      cursor: wait;
+      opacity: 0.8;
+      background: #95a5a6;
+    }
+    /* Ukrywamy oryginalne przyciski, żeby skupić się na PDF */
+    #start-button, #download-offline-button {
+      display: none;
+    }
+    
+    /* Pasek postępu */
+    #pdf-progress-container {
+      margin-top: 10px;
+      font-family: sans-serif;
+      font-size: 0.9rem;
+      color: #ccc;
+    }
+  </style>
+
+  <script defer>
+    // Logika eksportu do PDF
+    document.addEventListener("DOMContentLoaded", () => {
+      const pdfBtn = document.getElementById("download-pdf-button");
+      const progressEl = document.getElementById("pdf-progress-text");
+      
+      // Funkcja sprawdzająca czy app.js załadował dane
+      const checkDataLoaded = setInterval(() => {
+        if (typeof state !== 'undefined' && state.slides && state.slides.length > 0) {
+          clearInterval(checkDataLoaded);
+          console.log("Dane załadowane, można generować PDF.");
+          if (pdfBtn) pdfBtn.disabled = false;
+        }
+      }, 500);
+
+      if (pdfBtn) {
+        pdfBtn.disabled = true; // Czekamy na dane
+        pdfBtn.addEventListener("click", startPdfGeneration);
+      }
+
+      async function startPdfGeneration() {
+        if (!window.jspdf || !window.html2canvas) {
+          alert("Biblioteki PDF nie zostały załadowane.");
+          return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+          orientation: "landscape",
+          unit: "px",
+          format: [1920, 1080], // Zakładamy Full HD dla dobrej jakości
+          hotfixes: ["px_scaling"]
+        });
+
+        const slideLayer = document.getElementById("slide-layer");
+        const videoBg = document.getElementById("video-bg");
+        const startOverlay = document.getElementById("start-overlay");
+        const loadingOverlay = document.getElementById("loading-overlay");
+
+        // Ukrywamy overlaye
+        if (startOverlay) startOverlay.style.display = "none";
+        if (loadingOverlay) loadingOverlay.style.display = "none";
+
+        // Zatrzymujemy ewentualne animacje w app.js
+        if (typeof state !== 'undefined') {
+          state.animationsEnabled = false; // Wyłączamy animacje wejścia dla przyspieszenia
+        }
+
+        pdfBtn.disabled = true;
+        const originalSlideIndex = state.currentSlideIndex;
+        const totalSlides = state.slides.length;
+
+        try {
+          for (let i = 0; i < totalSlides; i++) {
+            progressEl.textContent = `Generowanie slajdu ${i + 1} z ${totalSlides}...`;
+            
+            // 1. Renderuj slajd
+            state.currentSlideIndex = i;
+            // Wywołujemy funkcję z app.js
+            if (typeof renderCurrentSlide === 'function') {
+              renderCurrentSlide();
+            } else {
+              throw new Error("Nie znaleziono funkcji renderCurrentSlide");
+            }
+
+            // 2. Czekaj na render (wideo, fonty, układ)
+            // Dajemy trochę czasu na załadowanie wideo i ułożenie layoutu
+            await new Promise(resolve => setTimeout(resolve, 1500)); 
+
+            // 3. Przygotuj canvas zbiorczy
+            const canvas = document.createElement("canvas");
+            canvas.width = 1920;
+            canvas.height = 1080;
+            const ctx = canvas.getContext("2d");
+
+            // 4. Rysuj tło z wideo
+            if (videoBg) {
+               // Rysujemy wideo przeskalowane do canvasa
+               ctx.drawImage(videoBg, 0, 0, canvas.width, canvas.height);
+            } else {
+               // Fallback - czarne tło
+               ctx.fillStyle = "#000";
+               ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            // 5. Rysuj warstwę HTML (napisy)
+            // Używamy html2canvas na #slide-layer
+            // Musimy zadbać o przezroczystość i skalę
+            const slideCanvas = await html2canvas(slideLayer, {
+              backgroundColor: null, // Przezroczyste tło
+              scale: 1, // Skala 1:1 względem ekranu? Nie, html2canvas bierze z viewportu.
+              // Lepiej wymusić wymiary canvasu, jeśli chcemy wysoką jakość
+              canvas: null,
+              logging: false,
+              useCORS: true
+            });
+
+            // Skalujemy slideCanvas do naszego głównego canvasa 1920x1080
+            // slideLayer w CSS ma wymiary zależne od viewportu. 
+            // html2canvas zrzuca to co widzi.
+            ctx.drawImage(slideCanvas, 0, 0, canvas.width, canvas.height);
+
+            // 6. Dodaj do PDF
+            const imgData = canvas.toDataURL("image/jpeg", 0.85); // JPEG z jakością 0.85 dla mniejszego rozmiaru
+            
+            if (i > 0) {
+              pdf.addPage([1920, 1080], "landscape");
+            }
+            pdf.addImage(imgData, "JPEG", 0, 0, 1920, 1080);
+          }
+
+          // Koniec
+          progressEl.textContent = "Zapisywanie pliku...";
+          pdf.save("prezentacja-laureaci.pdf");
+          
+        } catch (err) {
+          console.error(err);
+          alert("Wystąpił błąd podczas generowania PDF: " + err.message);
+        } finally {
+          // Przywróć stan
+          progressEl.textContent = "Gotowe!";
+          if (startOverlay) startOverlay.style.display = "flex";
+          pdfBtn.disabled = false;
+          
+          if (typeof state !== 'undefined') {
+            state.animationsEnabled = true;
+            state.currentSlideIndex = originalSlideIndex;
+            renderCurrentSlide();
+          }
+        }
+      }
+    });
+  </script>
+</head>
+<body>
+  <div id="app">
+    <!-- Overlay ładowania -->
+    <div id="loading-overlay">
+      <div class="loader"></div>
+    </div>
+
+    <!-- Warstwa wideo (tło) -->
+    <div id="video-layer">
+      <video id="video-bg" src="animations/bg-ogolny.mp4" autoplay muted loop playsinline preload="auto"></video>
+    </div>
+
+    <!-- Warstwa slajdów -->
+    <div id="slide-layer"></div>
+
+    <!-- Overlay startowy (zmieniony na panel eksportu) -->
+    <div id="start-overlay" class="visible"> <!-- Wymuszamy widoczność, bo app.js może chcieć go ukryć po starcie -->
+      <h1>Eksport do PDF</h1>
+      <p>
+        Ta strona służy do wygenerowania pliku PDF z całej prezentacji.<br>
+        Proces zajmie chwilę, ponieważ każdy slajd musi zostać wyrenderowany.
+      </p>
+      
+      <!-- Przycisk PDF -->
+      <button id="download-pdf-button" type="button" disabled>
+        <span class="btn-text">Pobierz prezentację jako PDF</span>
+      </button>
+      
+      <div id="pdf-progress-container">
+        Status: <span id="pdf-progress-text">Czekam na dane...</span>
+      </div>
+
+      <!-- Ukryte oryginalne przyciski, żeby zachować strukturę DOM dla app.js -->
+      <button id="start-button" style="display:none">Start</button>
+      <button id="download-offline-button" style="display:none">Offline</button>
+    </div>
+
+    <div id="error-message"></div>
+  </div>
+</body>
+</html>
